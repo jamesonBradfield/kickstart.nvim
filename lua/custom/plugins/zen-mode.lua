@@ -73,11 +73,4 @@ return {
     -- callback where you can add custom code when the Zen window closes
     on_close = function() end,
   },
-  -- TODO: I would LOVE an auto command to open files in zen mode.
-  --
-  -- config = function(,opts)
-  --   local group = vim.api.nvim_create_augroup('zen_mode_buf_enter', { clear = true })
-  --   vim.api.nvim_create_autocmd('BufEnter', { command = "require'zen-mode'.toggle({window = {width = .85}})", group = group })
-  --   require('zen-mode').setup(opts)
-  -- end,
 }
