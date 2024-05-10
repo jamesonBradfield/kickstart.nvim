@@ -133,7 +133,7 @@ return {
     dap.adapters.godot = {
       type = 'server',
       host = '127.0.0.1',
-      port = 6006,
+      port = 6007,
     }
     dap.configurations.gdscript = {
       {
@@ -144,13 +144,19 @@ return {
         launch_scene = true,
       },
     }
+    dap.adapters.coreclr = {
+      type = 'executable',
+      command = '/path/to/dotnet/netcoredbg/netcoredbg',
+      args = { '--interpreter=vscode' },
+    }
     dap.configurations.cs = {
       {
-        type = 'godot',
+        type = 'coreclr',
+        name = 'launch - netcoredbg',
         request = 'launch',
-        name = 'Launch Scene',
-        project = '${workspaceFolder}',
-        launch_scene = true,
+        program = function()
+          return vim.fn.input('Path to dll', vim.fn.getcwd() .. '/.godot/mono/temp/bin/Debug/', 'file')
+        end,
       },
     }
     dapui.setup()

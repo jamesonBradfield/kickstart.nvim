@@ -84,10 +84,12 @@ ls.add_snippets('cs', {
   }),
   s('function', {
     i(1),
-    t '()',
+    t '(',
+    i(2),
+    t ')',
     t { '', '{' },
     t { '', '	' },
-    i(2),
+    i(3),
     t { '', '}' },
   }),
   s('signal', {
@@ -98,5 +100,48 @@ ls.add_snippets('cs', {
     i(3),
     t ');',
   }),
+  s('print', {
+    t 'GD.Print("',
+    i(1),
+    t '");',
+  }),
+  s('str', {
+    t 'GD.VarToStr(',
+    i(1),
+    t ')',
+  }),
 })
+ls.add_snippets('txt', {
+  s('flaschcard', {
+    t '#',
+    i(1),
+    t { '', '' },
+    i(2),
+  }),
+  s('multiple-choice', {
+    t '#',
+    i(1),
+    t { '', '- ' },
+    i(2),
+    t { '', '- ' },
+    i(3),
+    t { '', '- ' },
+    i(4),
+    t { '', '- ' },
+    i(5),
+  }),
+  s('multi-select', {
+    t '#',
+    i(1),
+    t { '', '[ ] ' },
+    i(2),
+    t { '', '[ ] ' },
+    i(3),
+    t { '', '[ ] ' },
+    i(4),
+    t { '', '[ ] ' },
+    i(5),
+  }),
+})
+
 return {}
