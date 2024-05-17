@@ -71,6 +71,7 @@ return {
       ['<C-c>'] = 'actions.close',
       ['<C-r>'] = 'actions.refresh',
       ['h'] = 'actions.parent',
+      ['C-q'] = 'actions.add_to_qflist',
       ['_'] = 'actions.open_cwd',
       ['`'] = 'actions.cd',
       ['~'] = 'actions.tcd',

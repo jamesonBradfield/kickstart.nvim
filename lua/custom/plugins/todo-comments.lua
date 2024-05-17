@@ -2,6 +2,6 @@
 return {
   'folke/todo-comments.nvim',
   event = 'VimEnter',
-  dependencies = { 'nvim-lua/plenary.nvim', 'folke/trouble.nvim', 'nvim-telescope/telescope.nvim' },
+  dependencies = { 'nvim-lua/plenary.nvim', 'nvim-telescope/telescope.nvim' },
   opts = {},
 }

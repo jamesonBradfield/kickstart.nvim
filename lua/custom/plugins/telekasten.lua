@@ -18,18 +18,18 @@ return {
       template_new_daily = vim.fn.expand '~/zettelkasten' .. '/' .. 'templates/daily_tk.md',
       template_new_weekly = vim.fn.expand '~/zettelkasten' .. '/' .. 'templates/weekly_tk.md',
     }
-    -- Launch panel if nothing is typed after <leader>z
-    vim.keymap.set('n', '<leader>z', '<cmd>Telekasten panel<CR>')
+    -- Launch panel if nothing is typed after <leader>k
+    vim.keymap.set('n', '<leader>k<space>', '<cmd>Telekasten panel<CR>')
 
     -- Most used functions
-    vim.keymap.set('n', '<leader>zf', '<cmd>Telekasten find_notes<CR>', { desc = 'Telekasten Find Notes' })
-    vim.keymap.set('n', '<leader>zg', '<cmd>Telekasten search_notes<CR>', { desc = 'Telekasten Search Notes' })
-    vim.keymap.set('n', '<leader>zd', '<cmd>Telekasten goto_today<CR>', { desc = 'Telekasten Open Today' })
-    vim.keymap.set('n', '<leader>zz', '<cmd>Telekasten follow_link<CR>', { desc = 'Telekasten Follow Link' })
+    vim.keymap.set('n', '<leader>kf', '<cmd>Telekasten find_notes<CR>', { desc = 'Telekasten Find Notes' })
+    vim.keymap.set('n', '<leader>kg', '<cmd>Telekasten search_notes<CR>', { desc = 'Telekasten Search Notes' })
+    vim.keymap.set('n', '<leader>kd', '<cmd>Telekasten goto_today<CR>', { desc = 'Telekasten Open Today' })
+    vim.keymap.set('n', '<leader>kz', '<cmd>Telekasten follow_link<CR>', { desc = 'Telekasten Follow Link' })
     vim.keymap.set('n', '<ctrl>n', '<cmd>Telekasten new_note<CR>', { desc = 'Telekasten New Note' })
-    vim.keymap.set('n', '<leader>zc', '<cmd>Telekasten show_calendar<CR>', { desc = 'Telekasten Show Calendar' })
-    vim.keymap.set('n', '<leader>zb', '<cmd>Telekasten show_backlinks<CR>', { desc = 'Telekasten Backlinks' })
-    vim.keymap.set('n', '<leader>zI', '<cmd>Telekasten insert_img_link<CR>', { desc = 'Telekasten Insert Image Link' })
+    vim.keymap.set('n', '<leader>kc', '<cmd>Telekasten show_calendar<CR>', { desc = 'Telekasten Show Calendar' })
+    vim.keymap.set('n', '<leader>kb', '<cmd>Telekasten show_backlinks<CR>', { desc = 'Telekasten Backlinks' })
+    vim.keymap.set('n', '<leader>kI', '<cmd>Telekasten insert_img_link<CR>', { desc = 'Telekasten Insert Image Link' })
 
     -- Call insert link automatically when we start typing a link
   end,

@@ -3,7 +3,6 @@ local ls = require 'luasnip'
 local s = ls.snippet
 local t = ls.text_node
 local i = ls.insert_node
-
 ls.add_snippets('gdscript', {
 
   s('connect', {
@@ -111,7 +110,7 @@ ls.add_snippets('cs', {
     t ')',
   }),
 })
-ls.add_snippets('txt', {
+ls.add_snippets('HasCard', {
   s('flaschcard', {
     t '#',
     i(1),
