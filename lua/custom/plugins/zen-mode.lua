@@ -1,5 +1,6 @@
 return {
   'folke/zen-mode.nvim',
+  enabled = false,
   keys = {
     {
       '<leader>f',
@@ -71,6 +72,8 @@ return {
     -- callback where you can add custom code when the Zen window opens
     on_open = function(win) end,
     -- callback where you can add custom code when the Zen window closes
-    on_close = function() end,
+    on_close = function()
+      -- vim.cmd 'q'
+    end,
   },
 }

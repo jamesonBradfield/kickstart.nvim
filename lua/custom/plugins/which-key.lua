@@ -101,6 +101,8 @@ return { -- Useful plugin to show you pending keybinds.
       ['<leader>k'] = { name = 'tele[k]asten', _ = 'which_key_ignore' },
       ['<leader>t'] = { name = '[t]rouble', _ = 'which_key_ignore' },
       ['<leader>C'] = { name = '[C]odeSnap', _ = 'which_key_ignore' },
+      ['<leader>T'] = { name = '[T]asks', _ = 'which_key_ignore' },
+      ['<leader>B'] = { name = '[B]uild', _ = 'which_key_ignore' },
     }
   end,
 }

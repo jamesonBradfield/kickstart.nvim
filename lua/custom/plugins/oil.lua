@@ -171,12 +171,12 @@ return {
   dependencies = { 'nvim-tree/nvim-web-devicons' },
   keys = {
     {
-      '<leader>o',
+      '<leader>oo',
       mode = { 'n', 'x', 'o' },
       function()
-        require('oil').toggle_float()
+        vim.cmd 'Oil'
       end,
-      desc = 'open OIL',
+      desc = '[o]il [o]pen',
     },
   },
 }

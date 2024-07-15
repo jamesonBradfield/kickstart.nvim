@@ -5,7 +5,6 @@ return {
     'williamboman/mason.nvim',
     'williamboman/mason-lspconfig.nvim',
     'WhoIsSethDaniel/mason-tool-installer.nvim',
-
     -- Useful status updates for LSP.
     -- NOTE: `opts = {}` is the same as calling `require('fidget').setup({})`
     { 'j-hui/fidget.nvim', opts = {} },
@@ -17,6 +16,7 @@ return {
   config = function()
     local lspconfig = require 'lspconfig'
     lspconfig.gdscript.setup {}
+    lspconfig.dartls.setup {}
     -- Brief aside: **What is LSP?**
     --
     -- LSP is an initialism you've probably heard, but might not understand what it is.
@@ -146,6 +146,21 @@ return {
       --    https://github.com/pmizio/typescript-tools.nvim
       --
       -- But for many setups, the LSP (`tsserver`) will work just fine
+      anakin = {
+        cmd = { 'anakin', '--stdio' },
+        on_attach = function(client, bufnr)
+          -- Example on_attach function
+          print 'Anakin LSP started!'
+        end,
+        settings = {
+          python = {
+            analysis = {
+              extraPaths = { '/home/jamie/.config/i3/i3ipc/lib/python3.8/site-packages/i3ipc/' }, -- Adjust this to include your library paths
+              typeCheckingMode = 'basic',
+            },
+          },
+        },
+      },
       tsserver = {},
 
       lua_ls = {
@@ -158,7 +173,7 @@ return {
               callSnippet = 'Replace',
             },
             -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
-            -- diagnostics = { disable = { 'missing-fields' } },
+            diagnostics = { disable = { 'missing-fields' }, globals = { 'vim' } },
           },
         },
       },
@@ -172,23 +187,23 @@ return {
     --  You can press `g?` for help in this menu.
     require('mason').setup()
 
-    -- You can add other tools here that you want Mason to install
-    -- for you, so that they are available from within Neovim.
-    local ensure_installed = vim.tbl_keys(servers or {})
-    vim.list_extend(ensure_installed, {
-      'stylua', -- Used to format Lua code
-    })
-    require('mason-tool-installer').setup { ensure_installed = ensure_installed }
+    require('mason-tool-installer').setup { ensure_installed = { 'java-debug-adapter', 'java-test' } }
+    vim.api.nvim_command 'MasonToolsInstall'
 
     require('mason-lspconfig').setup {
+      ensure_installed = {
+        'jdtls',
+      },
       handlers = {
         function(server_name)
-          local server = servers[server_name] or {}
-          -- This handles overriding only values explicitly passed
-          -- by the server configuration above. Useful when disabling
-          -- certain features of an LSP (for example, turning off formatting for tsserver)
-          server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-          require('lspconfig')[server_name].setup(server)
+          if server_name ~= 'jdtls' then
+            local server = servers[server_name] or {}
+            -- This handles overriding only values explicitly passed
+            -- by the server configuration above. Useful when disabling
+            -- certain features of an LSP (for example, turning off formatting for tsserver)
+            server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
+            require('lspconfig')[server_name].setup(server)
+          end
         end,
 
         -- Next, you can provide a dedicated handler for specific servers.

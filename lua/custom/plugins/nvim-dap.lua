@@ -5,6 +5,18 @@ return {
     'nvim-neotest/nvim-nio',
     'theHamsta/nvim-dap-virtual-text',
     'nvim-treesitter/nvim-treesitter',
+    {
+      'stevearc/overseer.nvim',
+      opts = {
+        dap = false,
+      },
+    },
+    {
+      'Joakker/lua-json5',
+      -- if you're on windows
+      -- run = 'powershell ./install.ps1'
+      build = './install.sh',
+    },
   },
   lazy = false,
   keys = {
@@ -130,10 +142,11 @@ return {
     dap.listeners.before.event_exited.dapui_config = function()
       dapui.close()
     end
+
     dap.adapters.godot = {
       type = 'server',
       host = '127.0.0.1',
-      port = 6007,
+      port = 6006,
     }
 
     dap.configurations.gdscript = {
@@ -145,44 +158,66 @@ return {
         launch_scene = true,
       },
     }
-
-    dap.adapters.lldb = {
+    dap.set_log_level 'DEBUG'
+    dap.adapters.coreclr = {
       type = 'executable',
-      command = '/home/linuxbrew/.linuxbrew/bin/lldb-dap', -- adjust as needed, must be absolute path
-      name = 'lldb',
+      command = '/home/jamie/.local/share/nvim/mason/bin/netcoredbg',
+      args = { '--interpreter=vscode' },
     }
 
     dap.configurations.cs = {
       {
-        name = 'Launch Project',
-        type = 'lldb',
+        type = 'coreclr',
+        name = 'launch - netcoredbg',
         request = 'launch',
-        program = '/home/jamie/Path/Godot_v4.2.1-stable_mono_linux_x86_64/Godot_v4.2.1-stable_mono_linux.x86_64',
-        -- or
-        -- ${workspaceFolder}/bin/godot.linuxbsd.editor.dev.x86_64.llvm
-        cwd = '${workspaceFolder}',
-        --  Change the arguments below for the project you want to test with.
-        --  To run the project instead of editing it, remove the "--editor" argument.
-        args = { '--path', '/home/jamie/GodotProjects/LambastAddon/' },
-        environment = {},
-        preLaunchTask = 'build',
-        stopOnEntry = false,
-        externalConsole = false,
-        -- 💀
-        -- if you change `runInTerminal` to true, you might need to change the yama/ptrace_scope setting:
-        --
-        --    echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
-        --
-        -- Otherwise you might get the following error:
-        --
-        --    Error on launch: Failed to attach to the target process
-        --
-        -- But you should be aware of the implications:
-        -- https://www.kernel.org/doc/html/latest/admin-guide/LSM/Yama.html
-        -- runInTerminal = false,
+        program = function()
+          return vim.fn.input('Path to dll', vim.fn.getcwd() .. '/.godot/mono/temp/bin/Debug/', 'file')
+        end,
+      },
+      {
+        name = 'Attach to Process',
+        type = 'coreclr',
+        request = 'attach',
+        processId = require('dap.utils').pick_process,
       },
     }
+    dap.configurations.java = {
+      {
+        name = 'Debug Launch (1GB)',
+        type = 'java',
+        request = 'launch',
+        vmArgs = '-Xmx1G',
+      },
+      {
+        name = 'Debug Launch (2GB)',
+        type = 'java',
+        request = 'launch',
+        vmArgs = '-Xmx2G',
+      },
+      {
+        name = 'Debug Launch (3GB)',
+        type = 'java',
+        request = 'launch',
+        vmArgs = '-Xmx3G',
+      },
 
+      {
+        name = 'Debug Attach (8000)',
+        type = 'java',
+        request = 'attach',
+        hostName = '127.0.0.1',
+        port = 8000,
+      },
+      {
+        name = 'Debug Attach (5005)',
+        type = 'java',
+        request = 'attach',
+        hostName = '127.0.0.1',
+        port = 5005,
+      },
+    }
+    json5 = require 'json5'
+    require('dap.ext.vscode').json_decode = json5.parse
     dapui.setup()
   end,
 }
