@@ -1,5 +1,6 @@
 return {
   'folke/trouble.nvim',
+  enabled = false,
   lazy = false,
   branch = 'dev', -- IMPORTANT!
   dependencies = { 'folke/todo-comments.nvim' },

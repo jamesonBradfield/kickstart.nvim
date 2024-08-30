@@ -6,14 +6,11 @@ vim.keymap.set({ 'n', 'x', 'o' }, '<C-S-s>', function()
   vim.cmd 'vsplit'
 end, { desc = 'V[S]plit' })
 
-vim.keymap.set({ 'n', 'x', 'o' }, '<leader><leader>s', function()
-  vim.cmd 'w'
-  vim.cmd 'source %'
-  local plugin = string.match(vim.fn.expand '%:p:h', '.-/([^/]+)$', 1)
-  vim.cmd('Lazy reload ' .. plugin)
-end, { desc = '[s]ource file' })
+vim.keymap.set({ 'n', 'x', 'o' }, '<leader>x', function()
+  require('lazy-plugin-reloader').ReloadCurrentFile()
+end, { desc = '[x] reload lua' })
 
-vim.cmd 'autocmd VimEnter , :ZenMode'
+-- vim.cmd 'autocmd VimEnter , :ZenMode'
 
 --vim.api.nvim_create_autocmd({ 'VimEnter', 'BufReadPost' }, {
 --  pattern = {},
