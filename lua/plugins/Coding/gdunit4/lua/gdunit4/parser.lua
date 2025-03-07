@@ -1,56 +1,162 @@
--- parser.lua
-local Parser = {}
-local Utils = require('gdunit4.utils')
-local TreeSitterQuery = require('gdunit4.treesitter_query')
-local FileData = require('gdunit4.file_data')
-local MethodParser = require('gdunit4.method_parser')
+-- parser.lua - Streamlined C# parser for GdUnit4
+-- Handles parsing C# files to extract class structure for test generation
 
-function Parser.parse_file(file_path)
-  -- Read the file content
+local M = {}
+
+-- Query for extracting class information from C# files
+local CS_QUERY = [[
+    ; Get the namespace definition
+    (namespace_declaration
+        name: (identifier) @file.namespace
+    )
+
+    ; Get the class name and constructor
+    (class_declaration
+        name: (identifier) @file.class_name
+        (constructor_declaration
+            parameters: (parameter_list) @constructor.params
+        )?
+    )
+
+    ; Get all method declarations and their components
+    (method_declaration
+        (modifier)* @method.modifier
+        returns: [
+            (predefined_type) @method.return_type
+            (identifier) @method.return_type
+            (type_argument_list) @method.return_type
+            (generic_name) @method.return_type
+        ]
+        name: (identifier) @method.name
+        parameters: (parameter_list) @method.params
+    ) @method.declaration
+]]
+
+-- Helper function to get node text
+local function get_node_text(node, content)
+  return node and vim.treesitter.get_node_text(node, content)
+end
+
+-- Parse a C# file and extract class structure
+function M.parse_file(file_path)
+  -- Read file content
   local content = table.concat(vim.fn.readfile(file_path), '\n')
-
+  
   -- Initialize TreeSitter parser
   local ts_parser = vim.treesitter.get_parser(0, 'c_sharp')
   if not ts_parser then
-    error 'Failed to create TreeSitter parser for C#'
+    vim.notify('Failed to create TreeSitter parser for C#', vim.log.levels.ERROR)
+    return nil
   end
+  
   local tree = ts_parser:parse()[1]
   local root = tree:root()
-
-  -- Create the query
-  local query = TreeSitterQuery.create_query('c_sharp', TreeSitterQuery.MAIN_QUERY)
-
-  -- Initialize our data structure
-  local file_data = FileData.new()
-  file_data.root = root
-  file_data.content = content
-
-  -- Initialize method parsing context
-  local method_context = MethodParser.create_method_context()
-
-  -- Process query captures
+  
+  -- Create query
+  local query = vim.treesitter.query.parse('c_sharp', CS_QUERY)
+  
+  -- Initialize data structure
+  local file_data = {
+    namespace = nil,
+    class_name = nil,
+    constructor_params = nil,
+    methods = {},
+  }
+  
+  -- Current method being processed
+  local current_method = nil
+  local method_modifiers = {}
+  
+  -- Process query matches
   for id, node in query:iter_captures(root, content) do
     local capture_name = query.captures[id]
-
+    
     if capture_name == 'file.namespace' then
-      file_data.namespace = Utils.get_node_text(node, content)
-    elseif capture_name == 'constructor.params' then
-      file_data.constructor_params = Utils.get_node_text(node, content)
+      file_data.namespace = get_node_text(node, content)
+    
     elseif capture_name == 'file.class_name' then
-      file_data.class_name = Utils.get_node_text(node, content)
-    else
-      -- Handle method-related captures
-      local method_complete = MethodParser.process_method_node(method_context, capture_name, node, content)
-
-      -- If method parsing is complete, add it to file_data
-      if method_complete then
-        FileData.add_method(file_data, method_context.current_method, method_context.method_modifiers)
-        method_context = MethodParser.create_method_context()
+      file_data.class_name = get_node_text(node, content)
+    
+    elseif capture_name == 'constructor.params' then
+      file_data.constructor_params = get_node_text(node, content)
+    
+    elseif capture_name == 'method.declaration' then
+      current_method = {}
+      method_modifiers = {}
+    
+    elseif capture_name == 'method.modifier' then
+      table.insert(method_modifiers, get_node_text(node, content))
+    
+    elseif capture_name == 'method.name' and current_method then
+      current_method.name = get_node_text(node, content)
+    
+    elseif capture_name == 'method.return_type' and current_method then
+      current_method.return_type = get_node_text(node, content)
+    
+    elseif capture_name == 'method.params' and current_method then
+      current_method.parameters = get_node_text(node, content)
+      
+      -- Add method if it's public
+      if vim.tbl_contains(method_modifiers, 'public') then
+        table.insert(file_data.methods, current_method)
       end
+      
+      -- Reset current method
+      current_method = nil
+      method_modifiers = {}
     end
   end
-
+  
   return file_data
 end
 
-return Parser
+-- Parse parameters from parameter list text
+function M.parse_parameters(params_text)
+  if not params_text or params_text == '' then
+    return {}
+  end
+  
+  -- Remove parentheses
+  params_text = params_text:gsub('^%(', ''):gsub('%)$', '')
+  
+  local params = {}
+  for param in params_text:gmatch('[^,]+') do
+    param = param:match('^%s*(.-)%s*$') -- Trim whitespace
+    if param ~= '' then
+      table.insert(params, param)
+    end
+  end
+  
+  return params
+end
+
+-- Generate default values for parameters based on type
+function M.generate_parameter_values(params_text)
+  local params = M.parse_parameters(params_text)
+  local values = {}
+  
+  for _, param in ipairs(params) do
+    local param_type = param:match('([%w_<>]+)%s+[%w_]+')
+    if param_type then
+      -- Default values by type
+      local default_value = ({
+        string = '""',
+        int = '0',
+        float = '0.0f',
+        double = '0.0',
+        bool = 'false',
+      })[param_type:lower()] or 'null'
+      
+      table.insert(values, default_value)
+    end
+  end
+  
+  return table.concat(values, ', ')
+end
+
+-- Extract type and name from a parameter string
+function M.extract_type_and_name(param_text)
+  return param_text:match('([%w_<>%.]+)%s+([%w_]+)')
+end
+
+return M
