@@ -24,7 +24,7 @@ return {
         mode = { 'n', 'x', 'o' },
         function()
           local message = vim.fn.input 'message'
-          vim.cmd('G commit -m' .. message)
+          vim.cmd('G commit -m' .. '"'.. message .. '"')
         end,
         desc = '[g]it [c]ommit',
       },

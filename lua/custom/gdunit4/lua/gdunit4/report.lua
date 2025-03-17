@@ -235,8 +235,8 @@ function M.display_results(project_root, report_dir)
   end
 
   -- Set buffer options
-  vim.api.nvim_buf_set_option(buf, 'modifiable', false)
-  vim.api.nvim_buf_set_option(buf, 'filetype', 'gdunit4_results')
+  vim.api.bo(buf, 'modifiable', false)
+  vim.api.bo(buf, 'filetype', 'gdunit4_results')
 
   -- Display in floating window
   local width = math.min(80, vim.o.columns - 4)
@@ -255,7 +255,7 @@ function M.display_results(project_root, report_dir)
   local win = vim.api.nvim_open_win(buf, true, win_opts)
 
   -- Set window options
-  vim.api.nvim_win_set_option(win, 'winblend', 0)
+  vim.api.wo(win, 'winblend', 0)
 
   -- Set keymaps for closing
   vim.api.nvim_buf_set_keymap(buf, 'n', 'q', ':close<CR>', { noremap = true, silent = true })

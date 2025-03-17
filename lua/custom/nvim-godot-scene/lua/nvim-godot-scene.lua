@@ -26,17 +26,6 @@ function M.setup(opts)
 		end
 	end, {})
 
-	-- Create or override key mappings
-	if opts.mappings ~= false then
-		local mappings = opts.mappings or {}
-
-		-- Default key mapping to open the scene view
-		vim.api.nvim_set_keymap('n', mappings.toggle_scene_view or '<Leader>gs', ':GodotSceneView<CR>',
-			{ noremap = true, silent = true })
-
-		-- Other potential mappings can be added here
-	end
-
 	-- Set up a mini API for other plugins to interact with
 	M.inspect_node = inspector.inspect_node
 	M.show_scene_tree = scene_tree.show_scene_tree

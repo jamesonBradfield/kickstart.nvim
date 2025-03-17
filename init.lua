@@ -20,45 +20,14 @@ vim.opt.rtp:prepend(lazypath)
 -- NOTE: Here is where you install your plugins.
 require 'options'
 require('lazy').setup {
-  {
-    import = 'plugins',
-      rocks = {
-        hererocks = true, -- recommended if you do not have global installation of Lua 5.1.
-      },
+  { import = 'plugins' },
+  { import = 'custom' },
+  rocks = {
+    hererocks = true, -- recommended if you do not have global installation of Lua 5.1.
   },
 }
--- vim.opt.errorformat = table.concat({
---   -- Match C# compiler errors/warnings with project context
---   '%f(%l\\,%c): %trror %[%m%\\]',  -- Error with project path
---   '%f(%l\\,%c): %tarning %[%m%\\]', -- Warning with project path
---   '%f(%l\\,%c): %trror %m',        -- Error without project path
---   '%f(%l\\,%c): %tarning %m',      -- Warning without project path
---   '%-G%.%#'                         -- Ignore all other lines
--- }, ',')
--- --
--- vim.api.nvim_create_autocmd('BufWritePost', {
---   pattern = '*.cs',
---   callback = function()
---     vim.fn.jobstart('/home/jamie/.local/bin/godot-build.sh', {
---       on_exit = function(_, code)
---         -- Clear previous results and load new ones
---         vim.fn.setqflist({}, 'r')
---         vim.fn.setqflist({}, ' ', {
---           title = 'Godot Build Results',
---           lines = vim.fn.systemlist('/home/jamie/.local/bin/godot-build.sh'),
---           efm = vim.opt.errorformat:get()
---         })
---
---         if code ~= 0 then
---           vim.cmd('copen')
---           vim.notify('Build failed', vim.log.levels.ERROR)
---         else
---           vim.notify('Build succeeded', vim.log.levels.INFO)
---         end
---       end
---     })
---   end
--- })
 require 'mappings'
+-- Init.lua additions
+
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=0 sw=2 et
