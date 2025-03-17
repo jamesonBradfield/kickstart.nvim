@@ -1,4 +1,3 @@
--- GdUnit4 Neovim Integration (Rewrite)
 -- A streamlined Neovim plugin for the GdUnit4 testing framework
 
 local M = {}
@@ -16,6 +15,7 @@ local DEFAULT_CONFIG = {
   report_directory = 'reports',
   report_count = 20,
   report_format = 'html',
+  use_absolute_paths = true, -- Whether to use absolute paths like /myProject/test
 }
 
 ---Setup GdUnit4 with optional configuration
@@ -172,44 +172,85 @@ local function with_project_dir(callback)
 end
 
 -- Command building and execution
-local function get_relative_path(full_path)
+local function get_relative_path(full_path, add_leading_slash)
   -- Ensure consistent forward slashes
   full_path = full_path:gsub('\\', '/')
-  -- Get relative path by removing current directory
-  return full_path:gsub('^' .. vim.fn.getcwd() .. '/?', '')
+
+  -- We need to maintain the project folder name in the path
+  -- First get the project root
+  local project_root = find_project_root()
+  if not project_root then
+    vim.notify('Could not find project root for path: ' .. full_path, vim.log.levels.WARN)
+    return full_path
+  end
+
+  -- Get the project name (the folder containing project.godot)
+  local project_name = vim.fn.fnamemodify(project_root, ':t')
+
+  -- Escape special pattern characters in project_root
+  local escaped_root = project_root:gsub('([%(%)%.%%%+%-%*%?%[%^%$])', '%%%1')
+
+  -- Check if path starts with project root
+  if full_path:match('^' .. escaped_root) then
+    -- Get path relative to project root
+    local rel_to_root = full_path:sub(#project_root + 1)
+    -- Remove leading slash if present
+    rel_to_root = rel_to_root:gsub('^/', '')
+
+    -- Construct final path with project name
+    local final_path = project_name .. '/' .. rel_to_root
+
+    -- Add leading slash if specified (to match documentation examples)
+    if add_leading_slash then
+      final_path = '/' .. final_path
+    end
+
+    vim.notify('Using relative path: ' .. final_path, vim.log.levels.DEBUG)
+    return final_path
+  end
+
+  -- If not in project directory, use absolute path
+  vim.notify('Using absolute path: ' .. full_path, vim.log.levels.DEBUG)
+  return full_path
+end
+
+-- Escape spaces and special characters without adding quotes
+local function escape_path(path)
+  -- Escape spaces with backslashes
+  return path:gsub(' ', '\\ ')
 end
 
 local function build_command(test_path, options)
   options = options or {}
   local runner_script = config.runner_script:gsub('^/', '')
-  local cmd_parts = { runner_script }
+
+  -- Build command using string concatenation instead of tables
+  local cmd = runner_script
 
   -- Add test path or config
   if test_path then
-    table.insert(cmd_parts, '-a')
-    table.insert(cmd_parts, get_relative_path(test_path))
+    local rel_path = get_relative_path(test_path, options.use_absolute_paths)
+    vim.notify('Running tests on: ' .. rel_path, vim.log.levels.INFO)
+    cmd = cmd .. ' -a ' .. escape_path(rel_path)
   elseif options.config then
-    table.insert(cmd_parts, '-conf')
-    table.insert(cmd_parts, options.config)
+    cmd = cmd .. ' -conf ' .. escape_path(options.config)
   end
 
   -- Add report arguments
   if config.report_directory then
-    table.insert(cmd_parts, '-rd')
-    table.insert(cmd_parts, config.report_directory:gsub('^/', ''))
+    cmd = cmd .. ' -rd ' .. escape_path(config.report_directory:gsub('^/', ''))
   end
 
   if config.report_count then
-    table.insert(cmd_parts, '-rc')
-    table.insert(cmd_parts, tostring(config.report_count))
+    cmd = cmd .. ' -rc ' .. tostring(config.report_count)
   end
 
   -- Add debug if needed
   if options.debug then
-    table.insert(cmd_parts, '--debug')
+    cmd = cmd .. ' --debug'
   end
 
-  return table.concat(cmd_parts, ' ')
+  return cmd
 end
 
 local function execute_command(cmd)
@@ -230,9 +271,7 @@ local function execute_command(cmd)
   return exit_code
 end
 
--- Public API
----Run a single test file
----@param opts table|nil Options including debug mode
+-- Run a single test file
 function M.run_test(opts)
   return with_project_dir(function()
     local current_file = vim.fn.expand '%:p'
@@ -246,11 +285,19 @@ function M.run_test(opts)
   end)
 end
 
----Run all tests in the project
+-- Run all tests in the project
 function M.run_all_tests()
   return with_project_dir(function(project_root)
     local test_path = project_root .. '/test'
-    local cmd = build_command(test_path)
+
+    -- For running all tests, use a configuration option (default true)
+    local use_leading_slash = true
+    if config.use_absolute_paths ~= nil then
+      use_leading_slash = config.use_absolute_paths
+    end
+
+    local cmd = build_command(test_path, { use_absolute_paths = use_leading_slash })
+    vim.notify('Executing all tests command: ' .. cmd, vim.log.levels.INFO)
     return execute_command(cmd) == 0
   end)
 end
@@ -331,10 +378,7 @@ function M.open_latest_report()
   return true
 end
 
--- Internal functions for test parsing and generation
--- These would be implemented similarly to the original but with simplified logic
--- For brevity, I've marked them as placeholders
-
+-- Internal functions
 function M._parse_file(file_path)
   return parser.parse_file(file_path)
 end
