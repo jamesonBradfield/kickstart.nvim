@@ -4,6 +4,7 @@
 return {
   dir = '~/Github-Projects/godot-help/', -- Point to plugin root, not lua subdirectory
   lazy = false,
+  enabled = false,
   name = 'godot-help',
   ft = { 'gdscript', 'cs' }, -- Load for GDScript and C# files
   config = function()
@@ -24,7 +25,7 @@ return {
       window_picker = true,
 
       -- Enable debug output for troubleshooting
-      debug = true,
+      debug = false,
     }
 
     -- Run diagnostics on startup to check setup

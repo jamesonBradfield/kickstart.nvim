@@ -13,7 +13,6 @@ return {
     },
     config = function()
       -- Add a debug statement to see if it's loading
-      vim.notify 'Loading godot-debug development version'
       require('godot-debug').setup()
     end,
   },

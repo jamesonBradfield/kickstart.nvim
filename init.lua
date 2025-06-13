@@ -651,7 +651,7 @@ require('lazy').setup({
             local server = opts.servers[server_name] or {}
             -- Use blink.cmp for capabilities
             server.capabilities = require('blink.cmp').get_lsp_capabilities(server.capabilities)
-            
+
             -- Special handling for omnisharp to add extended handlers
             if server_name == 'omnisharp' then
               local ok, omnisharp_extended = pcall(require, 'omnisharp_extended')
@@ -664,7 +664,7 @@ require('lazy').setup({
                 }
               end
             end
-            
+
             require('lspconfig')[server_name].setup(server)
           end,
         },
@@ -703,6 +703,7 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
+        gdscript = { 'gdformat' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
