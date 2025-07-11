@@ -1,4 +1,97 @@
-# kickstart.nvim
+# kickstart.nvim godot dev
+open nvim with godot as external editor
+-Exec powershell.exe
+-File "C:\Users\mcraf\bin\godot-wezterm-nvim.ps1" {file} {line} {col}
+stick the below snippet in the above path
+```pwsh
+param(
+    [Parameter(Mandatory=$true)]
+    [string]$File,
+    [int]$Line = 1,
+    [int]$Col = 1
+)
+
+$ErrorActionPreference = "Stop"
+
+# Try multiple possible pipe locations
+$PossiblePipes = @(
+    "\\.\pipe\godot-nvim",
+    "$env:LOCALAPPDATA\nvim-data\godot.pipe",
+    "$env:TEMP\nvim-godot.pipe"
+)
+
+function Find-NvimServer {
+    # First try to find existing server by checking common pipe locations
+    foreach ($pipe in $PossiblePipes) {
+        if (Test-Path $pipe -ErrorAction SilentlyContinue) {
+            return $pipe
+        }
+    }
+    
+    # If no pipe found, try to connect to any running nvim server
+    try {
+        $processes = Get-Process -Name "nvim" -ErrorAction SilentlyContinue
+        if ($processes) {
+            # Return a signal that nvim is running but we'll use CLI instead
+            return "running"
+        }
+    } catch {
+        # Ignore errors
+    }
+    
+    return $null
+}
+
+function Find-ProjectRoot {
+    param([string]$FilePath)
+    
+    $CurrentDir = Split-Path -Parent $FilePath
+    $MaxDepth = 5
+    $Depth = 0
+    
+    while ($CurrentDir -ne [System.IO.Path]::GetPathRoot($CurrentDir) -and $Depth -lt $MaxDepth) {
+        if (Test-Path (Join-Path $CurrentDir "project.godot")) {
+            return $CurrentDir
+        }
+        $CurrentDir = Split-Path -Parent $CurrentDir
+        $Depth++
+    }
+    
+    return Split-Path -Parent $FilePath
+}
+
+function Test-WeztermRunning {
+    return (Get-Process -Name "wezterm*" -ErrorAction SilentlyContinue) -ne $null
+}
+
+function Open-File {
+    $ProjectRoot = Find-ProjectRoot -FilePath $File
+    $NvimServer = Find-NvimServer
+    
+    if (Test-WeztermRunning) {
+        if ($NvimServer -and $NvimServer -ne "running") {
+            # Use named pipe connection
+            $RemoteCmd = ":cd $ProjectRoot<CR>:e $File<CR>:call cursor($Line,$Col)<CR>"
+            wezterm cli spawn --cwd $ProjectRoot -- nvim --server $NvimServer --remote-send "<C-\><C-N>$RemoteCmd"
+        } else {
+            # Use CLI spawn (works even if nvim server exists)
+            wezterm cli spawn --cwd $ProjectRoot -- nvim "+call cursor($Line,$Col)" $File
+        }
+    } else {
+        # Start WezTerm without any visible console windows
+        $ProcessInfo = New-Object System.Diagnostics.ProcessStartInfo
+        $ProcessInfo.FileName = "wezterm"
+        $ProcessInfo.Arguments = "start --cwd `"$ProjectRoot`" -- nvim `"+call cursor($Line,$Col)`" `"$File`""
+        $ProcessInfo.UseShellExecute = $false
+        $ProcessInfo.CreateNoWindow = $true
+        $ProcessInfo.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
+        [System.Diagnostics.Process]::Start($ProcessInfo) | Out-Null
+    }
+}
+
+Open-File
+
+```
 
 ## Introduction
 
