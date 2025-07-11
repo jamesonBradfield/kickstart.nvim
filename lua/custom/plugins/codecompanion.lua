@@ -38,7 +38,7 @@ return {
               ['Content-Type'] = 'application/json',
             },
             parameters = {
-              model = 'qwen3-32b', -- Your preferred chat model
+              model = 'qwen3-8b', -- Your preferred chat model
               temperature = 0.7,
               max_tokens = 4096,
               stream = true,
@@ -46,7 +46,7 @@ return {
 
             schema = {
               model = {
-                default = 'qwen3-32b',
+                default = 'qwen3-8b',
               },
             },
           })
