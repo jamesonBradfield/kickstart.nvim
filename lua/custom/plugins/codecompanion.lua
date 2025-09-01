@@ -3,150 +3,89 @@ return {
   dependencies = {
     'nvim-lua/plenary.nvim',
     'nvim-treesitter/nvim-treesitter',
-    'nvim-telescope/telescope.nvim', -- Optional: For using slash commands
-    { 'stevearc/dressing.nvim', opts = {} }, -- Optional: Improves the default Neovim interfaces
+    'nvim-telescope/telescope.nvim',
+    { 'stevearc/dressing.nvim', opts = {} },
     'saghen/blink.cmp',
+    'folke/snacks.nvim', -- for floating windows
   },
+  lazy = false,
+
+  keys = {
+    { '<leader>cc', '<cmd>CodeCompanionActions<cr>', mode = { 'n', 'v' }, desc = 'CodeCompanion Actions' },
+    {
+      '<leader>sq',
+      function()
+        require('search-assistant').search_from_selection()
+      end,
+      mode = 'v',
+      desc = 'Search Assistant',
+    },
+  },
+
   config = function()
-    -- Configure your LM Studio server IP here
-    -- To find your server IP: run 'ipconfig' (Windows) or 'ifconfig' (Linux/Mac)
-    -- Make sure LM Studio is set to "Allow network connections" in settings
-    local lm_studio_host = '192.168.1.84' -- Change this to your LM Studio server IP
-    local lm_studio_port = '1234'
+    local lm_studio = {
+      host = '192.168.1.84',
+      port = '1234',
+    }
 
     require('codecompanion').setup {
       strategies = {
-        chat = {
-          adapter = 'lmstudio_chat',
-        },
-        inline = {
-          adapter = 'lmstudio_inline',
-        },
-        agent = {
-          adapter = 'lmstudio_chat',
-        },
+        chat = { adapter = 'lmstudio' },
+        inline = { adapter = 'lmstudio_small' },
       },
-      adapters = {
-        lmstudio_chat = function()
-          return require('codecompanion.adapters').extend('openai', {
-            name = 'lmstudio_chat',
-            url = 'http://' .. lm_studio_host .. ':' .. lm_studio_port .. '/v1/chat/completions',
-            env = {
-              api_key = 'lm-studio', -- LM Studio doesn't require a real API key
-            },
-            headers = {
-              ['Content-Type'] = 'application/json',
-            },
-            parameters = {
-              model = 'qwen3-8b', -- Your preferred chat model
-              temperature = 0.7,
-              max_tokens = 4096,
-              stream = true,
-            },
 
-            schema = {
-              model = {
-                default = 'qwen3-8b',
-              },
-            },
-          })
-        end,
-        lmstudio_inline = function()
-          return require('codecompanion.adapters').extend('openai', {
-            name = 'lmstudio_inline',
-            url = 'http://' .. lm_studio_host .. ':' .. lm_studio_port .. '/v1/completions',
+      adapters = {
+        lmstudio = function()
+          return require('codecompanion.adapters').extend('openai_compatible', {
+            name = 'lmstudio',
             env = {
-              api_key = 'lm-studio',
-            },
-            headers = {
-              ['Content-Type'] = 'application/json',
-            },
-            parameters = {
-              model = 'qwen3-0.6b', -- Your preferred inline completion model
-              temperature = 0.3,
-              max_tokens = 256,
-              stream = false,
-            },
-            -- Override for completion-style requests
-            handlers = {
-              form_parameters = function(self, params, messages)
-                return {
-                  model = self.parameters.model,
-                  prompt = messages[#messages].content,
-                  temperature = self.parameters.temperature,
-                  max_tokens = self.parameters.max_tokens,
-                  stream = self.parameters.stream,
-                  stop = { '\n\n', '```' },
-                }
-              end,
-              form_messages = function(self, messages)
-                return messages
-              end,
+              url = string.format('http://%s:%s', lm_studio.host, lm_studio.port),
+              chat_url = '/v1/chat/completions',
             },
             schema = {
-              model = {
-                default = 'qwen3-0.6b',
-              },
+              model = { default = 'qwen/qwen3-4b-2507' },
+              temperature = { default = 0.3 },
+              max_completion_tokens = { default = 32768 },
+            },
+            features = {
+              text = true,
+              tools = true,
+              vision = false,
             },
           })
         end,
-      },
-      prompt_library = {
-        ['Custom C# Review'] = {
-          strategy = 'chat',
-          description = 'Review C# code with your coding preferences',
-          opts = {
-            mapping = '<Leader>cr',
-            modes = { 'v' },
-            slash_cmd = 'review',
-            auto_submit = true,
-          },
-          prompts = {
-            {
-              role = 'system',
-              content = function()
-                return 'You are an expert C# developer. When reviewing code, prefer early returns over nested if statements, avoid verbs in boolean names, and suggest using GodotLogger methods (Info, Debug, Warning) instead of GD.Print(). Focus on single source of truth and separation of concerns.'
-              end,
+
+        lmstudio_small = function()
+          return require('codecompanion.adapters').extend('openai_compatible', {
+            name = 'lmstudio_small',
+            env = {
+              url = string.format('http://%s:%s', lm_studio.host, lm_studio.port),
+              chat_url = '/v1/completions',
             },
-            {
-              role = 'user',
-              content = function(context)
-                return 'Please review this C# code and suggest improvements based on clean coding practices:\n\n```csharp\n' .. context.selection .. '\n```'
-              end,
+            schema = {
+              model = { default = 'qwen/qwen3-4b-2507' },
+              temperature = { default = 0.3 },
+              max_completion_tokens = { default = 256 },
             },
-          },
-        },
-      },
-      display = {
-        action_palette = {
-          width = 95,
-          height = 10,
-        },
-        chat = {
-          window = {
-            layout = 'vertical', -- float|vertical|horizontal|buffer
-            width = 0.45,
-            height = 0.8,
-          },
-          show_settings = false,
-        },
-      },
-      opts = {
-        log_level = 'DEBUG',
-        send_code = true,
-        use_default_actions = true,
-        use_default_prompt_library = true,
+          })
+        end,
+
+        -- New adapter for search query generation
+        search_query_gen = function()
+          return require('codecompanion.adapters').extend('openai_compatible', {
+            name = 'search_query_gen',
+            env = {
+              url = string.format('http://%s:%s', lm_studio.host, lm_studio.port),
+              chat_url = '/v1/chat/completions',
+            },
+            schema = {
+              model = { default = 'qwen/qwen3-4b-2507' },
+              temperature = { default = 0.1 }, -- Lower for more focused queries
+              max_completion_tokens = { default = 128 },
+            },
+          })
+        end,
       },
     }
-
-    -- Key mappings
-    vim.api.nvim_set_keymap('n', '<C-a>', '<cmd>CodeCompanionActions<cr>', { noremap = true, silent = true })
-    vim.api.nvim_set_keymap('v', '<C-a>', '<cmd>CodeCompanionActions<cr>', { noremap = true, silent = true })
-    vim.api.nvim_set_keymap('n', '<LocalLeader>Ct', '<cmd>CodeCompanionChat Toggle<cr>', { noremap = true, silent = true })
-    vim.api.nvim_set_keymap('v', '<LocalLeader>Ca', '<cmd>CodeCompanionChat Add<cr>', { noremap = true, silent = true })
-
-    -- Inline completion
-    vim.api.nvim_set_keymap('n', '<LocalLeader>C', '<cmd>CodeCompanion<cr>', { noremap = true, silent = true })
-    vim.api.nvim_set_keymap('v', '<LocalLeader>C', '<cmd>CodeCompanion<cr>', { noremap = true, silent = true })
   end,
 }

@@ -1,27 +1,26 @@
 return {
   'renerocksai/telekasten.nvim',
   dependencies = { 'nvim-telescope/telescope.nvim' },
-  opts = {
-    home = vim.fn.expand '~/zettelkasten', -- Put the name of your notes directory here
-    auto_set_filetype = false,
-  },
-  config = function(_, opts)
-    require('telekasten').setup(opts)
+  keys = {
     -- Launch panel if nothing is typed after <leader>z
-    vim.keymap.set('n', '<leader>k', '<cmd>Telekasten panel<CR>')
+    { '<leader>k', mode = 'n', '<cmd>Telekasten panel<cr>', desc = 'Tele[k]asten panel' },
 
     -- Most used functions
-    vim.keymap.set('n', '<leader>kf', '<cmd>Telekasten find_notes<CR>')
-    vim.keymap.set('n', '<leader>kg', '<cmd>Telekasten search_notes<CR>')
-    vim.keymap.set('n', '<leader>kd', '<cmd>Telekasten toggle_todo<CR>')
-    vim.keymap.set('n', '<leader>kD', '<cmd>Telekasten goto_today<CR>')
-    vim.keymap.set('n', '<leader>kz', '<cmd>Telekasten follow_link<CR>')
-    vim.keymap.set('n', '<leader>kn', '<cmd>Telekasten new_note<CR>')
-    vim.keymap.set('n', '<leader>kc', '<cmd>Telekasten show_calendar<CR>')
-    vim.keymap.set('n', '<leader>kb', '<cmd>Telekasten show_backlinks<CR>')
-    vim.keymap.set('n', '<leader>kI', '<cmd>Telekasten insert_img_link<CR>')
+    { '<leader>kf', mode = 'n', '<cmd>Telekasten find_notes<cr>', desc = 'Tele[k]asten find notes' },
+    { '<leader>kg', mode = 'n', '<cmd>Telekasten search_notes<cr>', desc = 'Tele[k]asten search notes' },
+    { '<leader>kd', mode = 'n', '<cmd>Telekasten toggle_todo<cr>', desc = 'Tele[k]asten toggle checkbox' },
+    { '<leader>kD', mode = 'n', '<cmd>Telekasten goto_today<cr>', desc = 'Tele[k]asten goto today' },
+    { '<leader>kz', mode = 'n', '<cmd>Telekasten follow_link<cr>', desc = 'Tele[k]asten follow link' },
+    { '<leader>kn', mode = 'n', '<cmd>Telekasten new_note<cr>', desc = 'Tele[k]asten new note' },
+    { '<leader>kc', mode = 'n', '<cmd>Telekasten show_calendar<cr>', desc = 'Tele[k]asten show calendar' },
+    { '<leader>kb', mode = 'n', '<cmd>Telekasten show_backlinks<cr>', desc = 'Tele[k]asten show backlinks' },
+    { '<leader>kI', mode = 'n', '<cmd>Telekasten insert_img_link<cr>', desc = 'Tele[k]asten insert image link' },
 
     -- Call insert link automatically when we start typing a link
-    vim.keymap.set('i', '[[', '<cmd>Telekasten insert_link<CR>')
-  end,
+    { '[[', mode = 'i', '<cmd>Telekasten insert_link<cr>', desc = 'Tele[k]asten insert link' },
+  },
+  opts = {
+    home = vim.fn.expand 'C:/Users/mcraf/zettelkasten/', -- Put the name of your notes directory here
+    auto_set_filetype = false,
+  },
 }

@@ -1,5 +1,6 @@
 return {
   'michaelb/sniprun',
+  enabled = false,
   branch = 'master',
 
   build = 'sh install.sh',
