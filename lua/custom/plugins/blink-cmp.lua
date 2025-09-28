@@ -16,50 +16,27 @@ return {
       ['<S-Tab>'] = { 'select_prev', 'fallback' },
       ['<CR>'] = { 'accept', 'fallback' },
       ['<C-Space>'] = { 'show', 'show_documentation', 'hide_documentation' },
-
-      -- Snippet navigation (matching your old Ctrl+l and Ctrl+h)
-      ['<C-l>'] = {
-        function(cmp)
-          if require('luasnip').expand_or_locally_jumpable() then
-            require('luasnip').expand_or_jump()
-          else
-            return cmp.select_next()
-          end
-        end,
-        'snippet_forward',
-        'fallback',
-      },
-      ['<C-h>'] = {
-        function(cmp)
-          if require('luasnip').locally_jumpable(-1) then
-            require('luasnip').jump(-1)
-          else
-            return cmp.select_prev()
-          end
-        end,
-        'snippet_backward',
-        'fallback',
-      },
-
-      -- Additional useful mappings
-      ['<C-e>'] = { 'hide' },
-      ['<C-k>'] = { 'show_documentation', 'hide_documentation' },
     },
 
     appearance = {
       -- 'mono' (default) for 'Nerd Font Mono' or 'normal' for 'Nerd Font'
       nerd_font_variant = 'mono',
     },
-
+    signature = {
+      enabled = true,
+      window = {
+        show_documentation = false,
+      },
+    },
     -- Enable ghost text (equivalent to your old experimental.ghost_text = true)
     completion = {
       documentation = { auto_show = true },
-      ghost_text = { enabled = true },
+      -- ghost_text = { enabled = true },
     },
 
     -- Configure sources (LSP gets priority by being first)
     sources = {
-      default = { 'codecompanion', 'lsp', 'path', 'snippets', 'buffer' },
+      default = { 'lsp', 'path', 'snippets', 'buffer' },
     },
 
     -- Snippets configuration

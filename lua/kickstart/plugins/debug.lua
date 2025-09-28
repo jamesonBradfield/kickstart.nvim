@@ -76,16 +76,29 @@ return {
   config = function()
     local dap = require 'dap'
     local dapui = require 'dapui'
-    -- Adapter configuration
+
     dap.adapters.coreclr = {
       type = 'executable',
-      command = 'netcoredbg', -- Uses PATH if installed via Mason
+      command = 'netcoredbg',
       args = { '--interpreter=vscode' },
-      options = {
-        detached = false, -- Required for Windows
-      },
     }
-    -- Dap UI setup
+    -- dap.configurations = {
+    --   cs = {
+    --     {
+    --       type = 'coreclr',
+    --       name = 'Launch',
+    --       request = 'attach',
+    --       preLaunchTask = function()
+    --         --check if we are in a project, build it and open a scene picker to select a scene.
+    --       end,
+    --       pid = function()
+    --         -- launch godot and get pid.
+    --       end,
+    --       console = 'internalConsole',
+    --       stopAtEntry = false,
+    --     },
+    --   },
+    -- }
     -- For more information, see |:help nvim-dap-ui|
     dapui.setup {
       -- Set icons to characters that are more likely to work in every terminal.

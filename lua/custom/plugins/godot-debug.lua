@@ -10,12 +10,21 @@ return {
     dependencies = {
       'folke/snacks.nvim', -- Direct dependency
       'mfussenegger/nvim-dap',
-      'nvim-telescope/telescope.nvim',
     },
     config = function()
-      -- Add a debug statement to see if it's loading
-      print 'Loading local godot-debug from dev path'
-      require('godot-debug').setup()
+      require('godot-debug').setup {
+        exclude_dirs = { 'addons/', 'src/' },
+        scene_cache_file = vim.fn.stdpath 'cache' .. '/godot_last_scene.txt',
+        debug_mode = true,
+        auto_detect = true,
+        ignore_build_errors = {
+          "GdUnit.*Can't establish server.*Already in use",
+          'Resource file not found: res://<.*Texture.*>',
+        },
+        buffer_reuse = true,
+        build_timeout = 120,
+        show_build_output = true,
+      }
     end,
   },
 

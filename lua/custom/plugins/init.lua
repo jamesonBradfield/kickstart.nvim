@@ -10,10 +10,10 @@ vim.o.foldtext = ''
 vim.opt.foldcolumn = '0'
 vim.opt.fillchars:append { fold = ' ' }
 vim.g.python3_host_prog = '/home/jamie/.venv/bin/python3'
-
-require('auto-grapple').setup()
-
 -- Load LSP configuration for Godot and OmniSharp
 require 'lspconfig'
-
+-- Remote server setup for notes
+if vim.fn.argv()[0] == '--listen' then
+  require('remote-server').setup()
+end
 return {}

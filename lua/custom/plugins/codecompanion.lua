@@ -29,6 +29,22 @@ return {
     }
 
     require('codecompanion').setup {
+      prompt_library = {
+        ['My New Prompt'] = {
+          strategy = 'chat',
+          description = 'Some cool custom prompt you can do',
+          prompts = {
+            {
+              role = 'system',
+              content = 'You are an experienced developer with Lua and Neovim',
+            },
+            {
+              role = 'user',
+              content = 'Can you explain why ...',
+            },
+          },
+        },
+      },
       strategies = {
         chat = { adapter = 'lmstudio' },
         inline = { adapter = 'lmstudio_small' },
@@ -43,7 +59,7 @@ return {
               chat_url = '/v1/chat/completions',
             },
             schema = {
-              model = { default = 'qwen/qwen3-4b-2507' },
+              model = { default = 'qwen/qwen3-coder-30b' },
               temperature = { default = 0.3 },
               max_completion_tokens = { default = 32768 },
             },
@@ -63,7 +79,7 @@ return {
               chat_url = '/v1/completions',
             },
             schema = {
-              model = { default = 'qwen/qwen3-4b-2507' },
+              model = { default = 'qwen/qwen3-coder-30b' },
               temperature = { default = 0.3 },
               max_completion_tokens = { default = 256 },
             },
@@ -79,7 +95,7 @@ return {
               chat_url = '/v1/chat/completions',
             },
             schema = {
-              model = { default = 'qwen/qwen3-4b-2507' },
+              model = { default = 'qwen/qwen3-coder-30b' },
               temperature = { default = 0.1 }, -- Lower for more focused queries
               max_completion_tokens = { default = 128 },
             },

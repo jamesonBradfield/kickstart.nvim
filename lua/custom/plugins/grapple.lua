@@ -2,11 +2,11 @@ return {
   'cbochs/grapple.nvim',
   dependencies = {
     'nvim-lualine/lualine.nvim',
-    'nvim-telescope/telescope.nvim', -- Will use this for better selection UI
+    'nvim-telescope/telescope.nvim',
   },
   opts = {
     icons = false,
-    scope = 'git', -- Default scope when none is specified
+    scope = 'git',
   },
   event = { 'BufReadPost', 'BufNewFile' },
   cmd = 'Grapple',
@@ -29,123 +29,6 @@ return {
 
     -- Dynamic scope management
     { '<leader>gs', '<cmd>Grapple open_scopes<cr>', desc = 'Grapple show all scopes' },
-    { '<leader>gl', '<cmd>Grapple open_loaded<cr>', desc = 'Grapple show loaded scopes' },
-
-    -- Create and tag in a dynamic scope with autocompletion
-    {
-      '<leader>gt',
-      function()
-        -- Use telescope for scope selection with autocompletion
-        local has_telescope, telescope = pcall(require, 'telescope.builtin')
-
-        if has_telescope then
-          -- Get list of existing scopes
-          local scope_ids = require('grapple').scope_ids()
-          local scopes = {}
-
-          -- Add existing scopes to the list
-          for _, scope_id in ipairs(scope_ids) do
-            table.insert(scopes, scope_id)
-          end
-
-          -- If there are existing scopes, show telescope picker
-          if #scopes > 0 then
-            vim.ui.select(scopes, {
-              prompt = 'Select or create scope:',
-              telescope = { initial_mode = 'insert' }, -- Start in insert mode for typing new scopes
-              format_item = function(item)
-                return item
-              end,
-            }, function(scope_name)
-              if scope_name and scope_name ~= '' then
-                vim.cmd('Grapple tag scope=' .. scope_name)
-                print('Tagged in scope: ' .. scope_name)
-              end
-            end)
-          else
-            -- If no existing scopes, use input prompt
-            vim.ui.input({ prompt = 'Enter scope name: ' }, function(scope_name)
-              if scope_name and scope_name ~= '' then
-                vim.cmd('Grapple tag scope=' .. scope_name)
-                print('Tagged in scope: ' .. scope_name)
-              end
-            end)
-          end
-        else
-          -- Fallback to regular input if telescope not available
-          vim.ui.input({ prompt = 'Enter scope name: ' }, function(scope_name)
-            if scope_name and scope_name ~= '' then
-              vim.cmd('Grapple tag scope=' .. scope_name)
-              print('Tagged in scope: ' .. scope_name)
-            end
-          end)
-        end
-      end,
-      desc = 'Tag in custom scope with prediction',
-    },
-
-    -- Open tags for a dynamic scope with autocompletion
-    {
-      '<leader>go',
-      function()
-        local scope_ids = require('grapple').scope_ids()
-        if #scope_ids > 0 then
-          vim.ui.select(scope_ids, {
-            prompt = 'Select scope to open:',
-          }, function(scope_name)
-            if scope_name and scope_name ~= '' then
-              vim.cmd('Grapple open_tags scope=' .. scope_name)
-            end
-          end)
-        else
-          print 'No scopes available'
-        end
-      end,
-      desc = 'Open custom scope tags',
-    },
-
-    -- Change to a dynamic scope with autocompletion
-    {
-      '<leader>gc',
-      function()
-        local scope_ids = require('grapple').scope_ids()
-        if #scope_ids > 0 then
-          vim.ui.select(scope_ids, {
-            prompt = 'Change to scope:',
-          }, function(scope_name)
-            if scope_name and scope_name ~= '' then
-              vim.cmd('Grapple change_scope ' .. scope_name)
-              print('Changed to scope: ' .. scope_name)
-            end
-          end)
-        else
-          print 'No scopes available'
-        end
-      end,
-      desc = 'Change to custom scope',
-    },
-
-    -- Quick delete/reset a scope with autocompletion
-    {
-      '<leader>gd',
-      function()
-        local scope_ids = require('grapple').scope_ids()
-        if #scope_ids > 0 then
-          vim.ui.select(scope_ids, {
-            prompt = 'Delete scope:',
-          }, function(scope_name)
-            if scope_name and scope_name ~= '' then
-              vim.cmd('Grapple reset_tags scope=' .. scope_name)
-              print('Deleted scope: ' .. scope_name)
-            end
-          end)
-        else
-          print 'No scopes available'
-        end
-      end,
-      desc = 'Delete custom scope',
-    },
-
     -- Quick scope cycling (if you work with multiple scopes)
     {
       '<leader>gn',
@@ -161,6 +44,43 @@ return {
         vim.cmd 'Grapple cycle_scopes prev'
       end,
       desc = 'Cycle to previous scope',
+    },
+
+    -- Labeled buffer group management
+    {
+      '<leader>gb',
+      function()
+        -- Create a new labeled buffer group
+        vim.ui.input({ prompt = 'Enter group name: ' }, function(group_name)
+          if group_name and group_name ~= '' then
+            -- Create the scope with a custom resolver that returns the group name
+            local grapple = require 'grapple'
+            local success, err = pcall(function()
+              grapple.define_scope {
+                name = group_name,
+                desc = 'Buffer group: ' .. group_name,
+                fallback = 'cwd',
+                cache = { event = 'BufEnter' },
+                resolver = function()
+                  -- Return the group name as both id and path
+                  local id = group_name
+                  local path = group_name
+                  return id, path
+                end,
+              }
+
+              -- Use this scope immediately
+              grapple.use_scope(group_name)
+              print('Created and switched to buffer group: ' .. group_name)
+            end)
+
+            if not success then
+              print('Error creating group: ' .. (err or 'Unknown error'))
+            end
+          end
+        end)
+      end,
+      desc = 'Create a new labeled buffer group',
     },
   },
   config = function(_, opts)

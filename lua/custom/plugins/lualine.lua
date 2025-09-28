@@ -64,6 +64,6 @@ return {
         'filetype',
       },
     },
-    options = { theme = 'tokyonight-storm' },
+    options = { theme = 'dracula-nvim' },
   },
 }
