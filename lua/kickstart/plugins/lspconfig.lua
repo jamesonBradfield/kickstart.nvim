@@ -4,7 +4,6 @@ return {
     { 'williamboman/mason.nvim', opts = {} },
     'williamboman/mason-lspconfig.nvim',
 
-    'Teatek/gdscript-extended-lsp.nvim',
     { 'Hoffs/omnisharp-extended-lsp.nvim', ft = 'cs' },
     'saghen/blink.cmp',
     { 'j-hui/fidget.nvim', opts = {} },
@@ -56,22 +55,7 @@ return {
 
         local client = vim.lsp.get_client_by_id(event.data.client_id)
 
-        -- Handle GDScript files specially with extended LSP
-        if client and client.name == 'gdscript' then
-          -- For GDScript, use the extended LSP for gd
-          local ok, gdscript_extended = pcall(require, 'gdscript-extended-lsp')
-          if ok then
-            vim.notify('GDScript extended LSP keymaps loaded', vim.log.levels.INFO)
-          else
-            -- Fallback to standard LSP if extended fails
-            map('gd', vim.lsp.buf.definition, '[G]oto [D]efinition')
-            vim.notify('GDScript extended LSP failed to load, using standard gd', vim.log.levels.WARN)
-          end
-        else
-          -- For all other languages, use standard LSP
-          map('gd', vim.lsp.buf.definition, '[G]oto [D]efinition')
-        end
-
+        map('gd', vim.lsp.buf.definition, '[G]oto [D]efinition')
         -- Common LSP keymaps for all languages using Snacks
         map('gr', function()
           Snacks.picker.lsp_references()
@@ -186,9 +170,6 @@ return {
       cmd = vim.lsp.rpc.connect('127.0.0.1', 6005),
       root_dir = require('lspconfig.util').root_pattern('project.godot', '.git'),
       filetypes = { 'gd', 'gdscript', 'gdscript3' },
-      on_attach = function(client, bufnr)
-        vim.notify('GDScript LSP attached!', vim.log.levels.INFO)
-      end,
     }
   end,
 }
