@@ -7,59 +7,7 @@ return {
     'saghen/blink.cmp',
     { 'j-hui/fidget.nvim', opts = {} },
   },
-  opts = {
-    servers = {
-      lua_ls = {
-        settings = {
-          Lua = {
-            completion = {
-              callSnippet = 'Replace',
-            },
-          },
-        },
-      },
-      gdscript = {
-        cmd = vim.lsp.rpc.connect('127.0.0.1', 6005),
-        root_dir = function(fname)
-          return require('lspconfig.util').root_pattern('project.godot', '.git')(fname)
-        end,
-        filetypes = { 'gd', 'gdscript', 'gdscript3' },
-        on_attach = function(client, bufnr)
-          -- Only set up extended LSP handlers after the base LSP is attached
-          vim.defer_fn(function()
-            local ok, gdscript_extended = pcall(require, 'gdscript_extended_lsp')
-            if ok then
-              -- Let gdscript-extended-lsp handle the gd keymap
-              vim.notify('GDScript extended LSP loaded', vim.log.levels.INFO)
-            end
-          end, 100)
-        end,
-      },
-      omnisharp = {
-        cmd = { 'omnisharp', '--languageserver', '--hostPID', tostring(vim.fn.getpid()) },
-        settings = {
-          FormattingOptions = {
-            EnableEditorConfigSupport = true,
-          },
-          RoslynExtensionsOptions = {
-            EnableImportCompletion = true,
-            EnableAnalyzersSupport = false,
-            AnalyzeOpenDocumentsOnly = true,
-          },
-          Sdk = {
-            IncludePrereleases = false,
-          },
-        },
-        root_dir = function(filename, bufnr)
-          return require('lspconfig.util').root_pattern('*.sln', '*.csproj', 'project.godot')(filename)
-        end,
-        init_options = {
-          AutomaticWorkspaceInit = true,
-        },
-      },
-    },
-  },
-  config = function(_, opts)
+  config = function()
     -- Configure diagnostics
     vim.diagnostic.config {
       severity_sort = true,
@@ -145,29 +93,93 @@ return {
       end,
     })
 
+    -- Setup mason-lspconfig for Mason-managed servers
     require('mason-lspconfig').setup {
       ensure_installed = {},
       automatic_installation = false,
       handlers = {
+        -- Default handler for Mason-managed servers
         function(server_name)
-          local server = opts.servers[server_name] or {}
-          server.capabilities = require('blink.cmp').get_lsp_capabilities(server.capabilities)
+          local capabilities = require('blink.cmp').get_lsp_capabilities()
 
+          -- Special handling for omnisharp
           if server_name == 'omnisharp' then
             local ok, omnisharp_extended = pcall(require, 'omnisharp_extended')
+            local handlers = {}
             if ok then
-              server.handlers = {
+              handlers = {
                 ['textDocument/definition'] = omnisharp_extended.definition_handler,
                 ['textDocument/typeDefinition'] = omnisharp_extended.type_definition_handler,
                 ['textDocument/references'] = omnisharp_extended.references_handler,
                 ['textDocument/implementation'] = omnisharp_extended.implementation_handler,
               }
             end
-          end
 
-          require('lspconfig')[server_name].setup(server)
+            require('lspconfig').omnisharp.setup {
+              capabilities = capabilities,
+              handlers = handlers,
+              cmd = { 'omnisharp', '--languageserver', '--hostPID', tostring(vim.fn.getpid()) },
+              settings = {
+                FormattingOptions = {
+                  EnableEditorConfigSupport = true,
+                },
+                RoslynExtensionsOptions = {
+                  EnableImportCompletion = true,
+                  EnableAnalyzersSupport = false,
+                  AnalyzeOpenDocumentsOnly = true,
+                },
+                Sdk = {
+                  IncludePrereleases = false,
+                },
+              },
+              root_dir = function(filename)
+                return require('lspconfig.util').root_pattern('*.sln', '*.csproj', 'project.godot')(filename)
+              end,
+              init_options = {
+                AutomaticWorkspaceInit = true,
+              },
+            }
+          elseif server_name == 'lua_ls' then
+            require('lspconfig').lua_ls.setup {
+              capabilities = capabilities,
+              settings = {
+                Lua = {
+                  completion = {
+                    callSnippet = 'Replace',
+                  },
+                },
+              },
+            }
+          else
+            -- Default setup for other servers
+            require('lspconfig')[server_name].setup {
+              capabilities = capabilities,
+            }
+          end
         end,
       },
+    }
+
+    -- CRITICAL: Setup gdscript manually (not managed by Mason)
+    -- This must be AFTER mason-lspconfig setup
+    local lspconfig = require 'lspconfig'
+    lspconfig.gdscript.setup {
+      capabilities = require('blink.cmp').get_lsp_capabilities(),
+      -- For Windows, use vim.lsp.rpc.connect
+      -- Check Godot's Editor Settings > Network > Language Server for the port
+      cmd = vim.lsp.rpc.connect('127.0.0.1', 6005),
+      root_dir = require('lspconfig.util').root_pattern('project.godot', '.git'),
+      filetypes = { 'gd', 'gdscript', 'gdscript3' },
+      on_attach = function(client, bufnr)
+        vim.notify('GDScript LSP attached!', vim.log.levels.INFO)
+        -- Give the extended LSP a moment to load after base LSP is attached
+        vim.defer_fn(function()
+          local ok, gdscript_extended = pcall(require, 'gdscript_extended_lsp')
+          if ok then
+            vim.notify('GDScript extended LSP loaded', vim.log.levels.INFO)
+          end
+        end, 100)
+      end,
     }
   end,
 }

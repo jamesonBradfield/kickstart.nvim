@@ -1,9 +1,11 @@
 -- lua/custom/plugins/gdscript-extended-lsp.lua
 return {
   'Teatek/gdscript-extended-lsp.nvim',
+  lazy = false,
   ft = 'gdscript',
   dependencies = {
     'neovim/nvim-lspconfig',
+    'nvim-telescope/telescope.nvim',
   },
   opts = {
     doc_file_extension = '.txt',
@@ -20,8 +22,8 @@ return {
     require('gdscript-extended-lsp').setup(opts)
 
     -- Load telescope extension if using telescope picker
-    -- if opts.picker == 'telescope' then
-    --   require('telescope').load_extension('gdscript-extended-lsp')
-    -- end
+    if opts.picker == 'telescope' then
+      require('telescope').load_extension 'gdscript-extended-lsp'
+    end
   end,
 }
