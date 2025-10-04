@@ -3,6 +3,8 @@ return {
   dependencies = {
     { 'williamboman/mason.nvim', opts = {} },
     'williamboman/mason-lspconfig.nvim',
+
+    'Teatek/gdscript-extended-lsp.nvim',
     { 'Hoffs/omnisharp-extended-lsp.nvim', ft = 'cs' },
     'saghen/blink.cmp',
     { 'j-hui/fidget.nvim', opts = {} },
@@ -64,7 +66,7 @@ return {
         -- For other files, we set it here
         local client = vim.lsp.get_client_by_id(event.data.client_id)
         if client and client.name ~= 'gdscript' then
-          map('gd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
+          map('gd', require('gdscript-extended-lsp').picker(), '[G]oto [D]efinition')
         end
 
         -- Document highlighting

@@ -1,5 +1,6 @@
 return {
   'renerocksai/telekasten.nvim',
+  enabled = false,
   dependencies = { 'nvim-telescope/telescope.nvim' },
   lazy = false,
   keys = {

@@ -1,29 +1,18 @@
 -- lua/custom/plugins/gdscript-extended-lsp.lua
+-- Replace your existing file with this version
 return {
   'Teatek/gdscript-extended-lsp.nvim',
-  lazy = false,
-  ft = 'gdscript',
-  dependencies = {
-    'neovim/nvim-lspconfig',
-    'nvim-telescope/telescope.nvim',
-  },
+  ft = { 'gdscript', 'gd', 'gdscript3' },
+  dependencies = {},
   opts = {
     doc_file_extension = '.txt',
-    view_type = 'floating', -- Options: "current", "split", "vsplit", "tab", "floating"
+    view_type = 'floating', -- Changed from vsplit to floating
     split_side = false,
     keymaps = {
-      declaration = 'gd', -- Go to definition (enhanced with documentation)
+      declaration = 'gd', -- This should set the gd keymap
       close = { 'q', '<Esc>' },
     },
     floating_win_size = 0.8,
-    picker = 'snacks', -- Since you're using snacks.nvim
+    picker = 'snacks', -- Changed from telescope to snacks
   },
-  config = function(_, opts)
-    require('gdscript-extended-lsp').setup(opts)
-
-    -- Load telescope extension if using telescope picker
-    if opts.picker == 'telescope' then
-      require('telescope').load_extension 'gdscript-extended-lsp'
-    end
-  end,
 }
