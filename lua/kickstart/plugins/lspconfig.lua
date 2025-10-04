@@ -54,20 +54,37 @@ return {
           vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc })
         end
 
-        -- Common LSP keymaps
-        map('gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
-        map('gI', require('telescope.builtin').lsp_implementations, '[G]oto [I]mplementation')
-        map('<leader>D', require('telescope.builtin').lsp_type_definitions, 'Type [D]efinition')
+        local client = vim.lsp.get_client_by_id(event.data.client_id)
+
+        -- Handle GDScript files specially with extended LSP
+        if client and client.name == 'gdscript' then
+          -- For GDScript, use the extended LSP for gd
+          local ok, gdscript_extended = pcall(require, 'gdscript-extended-lsp')
+          if ok then
+            vim.notify('GDScript extended LSP keymaps loaded', vim.log.levels.INFO)
+          else
+            -- Fallback to standard LSP if extended fails
+            map('gd', vim.lsp.buf.definition, '[G]oto [D]efinition')
+            vim.notify('GDScript extended LSP failed to load, using standard gd', vim.log.levels.WARN)
+          end
+        else
+          -- For all other languages, use standard LSP
+          map('gd', vim.lsp.buf.definition, '[G]oto [D]efinition')
+        end
+
+        -- Common LSP keymaps for all languages using Snacks
+        map('gr', function()
+          Snacks.picker.lsp_references()
+        end, '[G]oto [R]eferences')
+        map('gI', function()
+          Snacks.picker.lsp_implementations()
+        end, '[G]oto [I]mplementation')
+        map('<leader>D', function()
+          Snacks.picker.lsp_type_definitions()
+        end, 'Type [D]efinition')
         map('<leader>rn', vim.lsp.buf.rename, '[R]e[n]ame')
         map('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction', { 'n', 'x' })
         map('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
-
-        -- Note: 'gd' is handled by gdscript-extended-lsp for GDScript files
-        -- For other files, we set it here
-        local client = vim.lsp.get_client_by_id(event.data.client_id)
-        if client and client.name ~= 'gdscript' then
-          map('gd', require('gdscript-extended-lsp').picker(), '[G]oto [D]efinition')
-        end
 
         -- Document highlighting
         if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_documentHighlight, event.buf) then
@@ -163,24 +180,14 @@ return {
     }
 
     -- CRITICAL: Setup gdscript manually (not managed by Mason)
-    -- This must be AFTER mason-lspconfig setup
     local lspconfig = require 'lspconfig'
     lspconfig.gdscript.setup {
       capabilities = require('blink.cmp').get_lsp_capabilities(),
-      -- For Windows, use vim.lsp.rpc.connect
-      -- Check Godot's Editor Settings > Network > Language Server for the port
       cmd = vim.lsp.rpc.connect('127.0.0.1', 6005),
       root_dir = require('lspconfig.util').root_pattern('project.godot', '.git'),
       filetypes = { 'gd', 'gdscript', 'gdscript3' },
       on_attach = function(client, bufnr)
         vim.notify('GDScript LSP attached!', vim.log.levels.INFO)
-        -- Give the extended LSP a moment to load after base LSP is attached
-        vim.defer_fn(function()
-          local ok, gdscript_extended = pcall(require, 'gdscript_extended_lsp')
-          if ok then
-            vim.notify('GDScript extended LSP loaded', vim.log.levels.INFO)
-          end
-        end, 100)
       end,
     }
   end,
