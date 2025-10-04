@@ -477,8 +477,7 @@ require('lazy').setup({
     dependencies = {
       { 'williamboman/mason.nvim', opts = {} },
       'williamboman/mason-lspconfig.nvim',
-      'WhoIsSethDaniel/mason-tool-installer.nvim',
-      'Hoffs/omnisharp-extended-lsp.nvim',
+      { 'Hoffs/omnisharp-extended-lsp.nvim', ft = 'cs' },
       'saghen/blink.cmp',
       -- Add fidget back for LSP status updates
       { 'j-hui/fidget.nvim', opts = {} },
@@ -577,32 +576,10 @@ require('lazy').setup({
             vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc })
           end
 
-          -- Get the client
-          local client = vim.lsp.get_client_by_id(event.data.client_id)
-
-          -- Special handling for OmniSharp
-          if client and client.name == 'omnisharp' then
-            -- Use omnisharp-extended if available, otherwise fall back to standard LSP
-            local ok, omnisharp_extended = pcall(require, 'omnisharp_extended')
-            if ok then
-              map('gd', omnisharp_extended.lsp_definition, '[G]oto [D]efinition')
-              map('gr', omnisharp_extended.lsp_references, '[G]oto [R]eferences')
-              map('gI', omnisharp_extended.lsp_implementation, '[G]oto [I]mplementation')
-              map('<leader>D', omnisharp_extended.lsp_type_definition, 'Type [D]efinition')
-            else
-              -- Fallback to telescope
-              map('gd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
-              map('gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
-              map('gI', require('telescope.builtin').lsp_implementations, '[G]oto [I]mplementation')
-              map('<leader>D', require('telescope.builtin').lsp_type_definitions, 'Type [D]efinition')
-            end
-          else
-            -- Standard LSP keymaps for other servers
-            map('gd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
-            map('gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
-            map('gI', require('telescope.builtin').lsp_implementations, '[G]oto [I]mplementation')
-            map('<leader>D', require('telescope.builtin').lsp_type_definitions, 'Type [D]efinition')
-          end
+          map('gd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
+          map('gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
+          map('gI', require('telescope.builtin').lsp_implementations, '[G]oto [I]mplementation')
+          map('<leader>D', require('telescope.builtin').lsp_type_definitions, 'Type [D]efinition')
 
           -- Common keymaps for all LSP servers
           map('<leader>rn', vim.lsp.buf.rename, '[R]e[n]ame')
@@ -634,13 +611,6 @@ require('lazy').setup({
           end
         end,
       })
-
-      -- Set up mason-tool-installer
-      local ensure_installed = vim.tbl_keys(opts.servers or {})
-      vim.list_extend(ensure_installed, {
-        'stylua', -- Used to format Lua code
-      })
-      require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
       -- Set up mason-lspconfig with handlers
       require('mason-lspconfig').setup {
