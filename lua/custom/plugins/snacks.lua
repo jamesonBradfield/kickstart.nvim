@@ -340,13 +340,13 @@ return {
       desc = 'Colorschemes',
     },
     -- LSP
-    {
-      'gd',
-      function()
-        Snacks.picker.lsp_definitions()
-      end,
-      desc = 'Goto Definition',
-    },
+    -- {
+    --   'gd',
+    --   function()
+    --     Snacks.picker.lsp_definitions()
+    --   end,
+    --   desc = 'Goto Definition',
+    -- },
     {
       'gD',
       function()

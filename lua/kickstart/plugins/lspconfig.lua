@@ -55,8 +55,7 @@ return {
 
         local client = vim.lsp.get_client_by_id(event.data.client_id)
 
-        map('gd', vim.lsp.buf.definition, '[G]oto [D]efinition')
-        -- Common LSP keymaps for all languages using Snacks
+        -- All other keymaps remain the same for all clients
         map('gr', function()
           Snacks.picker.lsp_references()
         end, '[G]oto [R]eferences')
@@ -162,14 +161,7 @@ return {
         end,
       },
     }
-
-    -- CRITICAL: Setup gdscript manually (not managed by Mason)
     local lspconfig = require 'lspconfig'
-    lspconfig.gdscript.setup {
-      capabilities = require('blink.cmp').get_lsp_capabilities(),
-      cmd = vim.lsp.rpc.connect('127.0.0.1', 6005),
-      root_dir = require('lspconfig.util').root_pattern('project.godot', '.git'),
-      filetypes = { 'gd', 'gdscript', 'gdscript3' },
-    }
+    lspconfig.gdscript.setup {}
   end,
 }
