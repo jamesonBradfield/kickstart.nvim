@@ -3,7 +3,7 @@ return {
   -- Development version (local path)
   {
     'godot-debug',
-    enabled = true, -- Toggle this when developing
+    enabled = false, -- Toggle this when developing
     lazy = false,
     dev = true,
     dir = vim.fn.expand '~/Github-Projects/godot-debug', -- Path to your project

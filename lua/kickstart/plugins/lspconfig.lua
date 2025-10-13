@@ -3,13 +3,9 @@ return {
   dependencies = {
     { 'williamboman/mason.nvim', opts = {} },
     'williamboman/mason-lspconfig.nvim',
-
-    { 'Hoffs/omnisharp-extended-lsp.nvim', ft = 'cs' },
     'saghen/blink.cmp',
-    { 'j-hui/fidget.nvim', opts = {} },
   },
   config = function()
-    -- Configure diagnostics
     vim.diagnostic.config {
       severity_sort = true,
       float = { border = 'rounded', source = 'if_many' },
@@ -52,10 +48,8 @@ return {
           mode = mode or 'n'
           vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc })
         end
-
         local client = vim.lsp.get_client_by_id(event.data.client_id)
 
-        -- All other keymaps remain the same for all clients
         map('gr', function()
           Snacks.picker.lsp_references()
         end, '[G]oto [R]eferences')
@@ -69,7 +63,6 @@ return {
         map('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction', { 'n', 'x' })
         map('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
 
-        -- Document highlighting
         if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_documentHighlight, event.buf) then
           local highlight_augroup = vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = false })
           vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
@@ -77,13 +70,11 @@ return {
             group = highlight_augroup,
             callback = vim.lsp.buf.document_highlight,
           })
-
           vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
             buffer = event.buf,
             group = highlight_augroup,
             callback = vim.lsp.buf.clear_references,
           })
-
           vim.api.nvim_create_autocmd('LspDetach', {
             group = vim.api.nvim_create_augroup('kickstart-lsp-detach', { clear = true }),
             callback = function(event2)
@@ -95,73 +86,90 @@ return {
       end,
     })
 
-    -- Setup mason-lspconfig for Mason-managed servers
+    local capabilities = require('blink.cmp').get_lsp_capabilities()
+
+    vim.lsp.config('omnisharp', {
+      capabilities = capabilities,
+      cmd = { 'omnisharp', '--languageserver', '--hostPID', tostring(vim.fn.getpid()) },
+      settings = {
+        FormattingOptions = {
+          EnableEditorConfigSupport = true,
+        },
+        RoslynExtensionsOptions = {
+          EnableImportCompletion = true,
+          EnableAnalyzersSupport = false,
+          AnalyzeOpenDocumentsOnly = true,
+        },
+        Sdk = {
+          IncludePrereleases = false,
+        },
+      },
+      root_dir = function(filename)
+        return require('lspconfig.util').root_pattern('*.sln', '*.csproj', 'project.godot')(filename)
+      end,
+      init_options = {
+        AutomaticWorkspaceInit = true,
+      },
+    })
+
+    local ok, omnisharp_extended = pcall(require, 'omnisharp_extended')
+    if ok then
+      vim.lsp.config('omnisharp', {
+        handlers = {
+          ['textDocument/definition'] = omnisharp_extended.definition_handler,
+          ['textDocument/typeDefinition'] = omnisharp_extended.type_definition_handler,
+          ['textDocument/references'] = omnisharp_extended.references_handler,
+          ['textDocument/implementation'] = omnisharp_extended.implementation_handler,
+        },
+      })
+    end
+
+    vim.lsp.config('lua_ls', {
+      capabilities = capabilities,
+      settings = {
+        Lua = {
+          completion = {
+            callSnippet = 'Replace',
+          },
+        },
+      },
+    })
+
+    vim.lsp.config('gdscript', {
+      capabilities = capabilities,
+    })
+    vim.lsp.config('rust_analyzer', {
+      capabilities = capabilities,
+      settings = {
+        ['rust-analyzer'] = {
+          cargo = {
+            allFeatures = true,
+            loadOutDirsFromCheck = true,
+          },
+          procMacro = {
+            enable = true,
+            ignored = {
+              ['async-trait'] = { 'async_trait' },
+              ['napi-derive'] = { 'napi' },
+            },
+          },
+          check = {
+            command = 'clippy',
+            extraArgs = { '--no-deps' },
+          },
+        },
+      },
+    })
     require('mason-lspconfig').setup {
       ensure_installed = {},
       automatic_installation = false,
       handlers = {
-        -- Default handler for Mason-managed servers
         function(server_name)
-          local capabilities = require('blink.cmp').get_lsp_capabilities()
-
-          -- Special handling for omnisharp
-          if server_name == 'omnisharp' then
-            local ok, omnisharp_extended = pcall(require, 'omnisharp_extended')
-            local handlers = {}
-            if ok then
-              handlers = {
-                ['textDocument/definition'] = omnisharp_extended.definition_handler,
-                ['textDocument/typeDefinition'] = omnisharp_extended.type_definition_handler,
-                ['textDocument/references'] = omnisharp_extended.references_handler,
-                ['textDocument/implementation'] = omnisharp_extended.implementation_handler,
-              }
-            end
-
-            require('lspconfig').omnisharp.setup {
-              capabilities = capabilities,
-              handlers = handlers,
-              cmd = { 'omnisharp', '--languageserver', '--hostPID', tostring(vim.fn.getpid()) },
-              settings = {
-                FormattingOptions = {
-                  EnableEditorConfigSupport = true,
-                },
-                RoslynExtensionsOptions = {
-                  EnableImportCompletion = true,
-                  EnableAnalyzersSupport = false,
-                  AnalyzeOpenDocumentsOnly = true,
-                },
-                Sdk = {
-                  IncludePrereleases = false,
-                },
-              },
-              root_dir = function(filename)
-                return require('lspconfig.util').root_pattern('*.sln', '*.csproj', 'project.godot')(filename)
-              end,
-              init_options = {
-                AutomaticWorkspaceInit = true,
-              },
-            }
-          elseif server_name == 'lua_ls' then
-            require('lspconfig').lua_ls.setup {
-              capabilities = capabilities,
-              settings = {
-                Lua = {
-                  completion = {
-                    callSnippet = 'Replace',
-                  },
-                },
-              },
-            }
-          else
-            -- Default setup for other servers
-            require('lspconfig')[server_name].setup {
-              capabilities = capabilities,
-            }
-          end
+          vim.lsp.enable(server_name)
         end,
       },
     }
-    local lspconfig = require 'lspconfig'
-    lspconfig.gdscript.setup {}
+
+    vim.lsp.enable 'gdscript'
   end,
 }
