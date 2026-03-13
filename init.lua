@@ -1,43 +1,46 @@
-require 'opts'
-require 'keymaps'
-
--- [[ Install `lazy.nvim` plugin manager ]]
---    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
   local lazyrepo = 'https://github.com/folke/lazy.nvim.git'
   local out = vim.fn.system { 'git', 'clone', '--filter=blob:none', '--branch=stable', lazyrepo, lazypath }
   if vim.v.shell_error ~= 0 then
-    error('Error cloning lazy.nvim:\n' .. out)
+    vim.api.nvim_echo({
+      { 'Failed to clone lazy.nvim:\n', 'ErrorMsg' },
+      { out, 'WarningMsg' },
+      { '\nPress any key to exit...' },
+    }, true, {})
+    vim.fn.getchar()
+    os.exit(1)
   end
-end ---@diagnostic disable-next-line: undefined-field
+end
 vim.opt.rtp:prepend(lazypath)
 
--- NOTE: Here is where you install your plugins.
-require('lazy').setup({
-  { import = 'kickstart.plugins' },
-  { import = 'custom.plugins' },
-}, {
-  ui = {
-    -- If you are using a Nerd Font: set icons to an empty table which will use the
-    -- default lazy.nvim defined Nerd Font icons, otherwise define a unicode icons table
-    icons = vim.g.have_nerd_font and {} or {
-      cmd = '⌘',
-      config = '🛠',
-      event = '📅',
-      ft = '📂',
-      init = '⚙',
-      keys = '🗝',
-      plugin = '🔌',
-      runtime = '💻',
-      require = '🌙',
-      source = '📄',
-      start = '🚀',
-      task = '📌',
-      lazy = '💤 ',
-    },
-  },
-})
+ local plugins = require('plugins').plugins
 
--- The line beneath this is called `modeline`. See `:help modeline`
--- vim: ts=2 sts=2 sw=2 et
+ require 'opts'
+
+   require('lazy').setup(plugins)
+
+vim.keymap.set('n', '<leader>v', function()
+  local socket = vim.v.servername
+  -- Escape backslashes for shell
+  socket = socket:gsub("\\", "\\\\")
+  local cmd = 'pwsh -NoProfile -ExecutionPolicy Bypass -File "C:/Users/jamie/bin/ducky.ps1" --nvim-socket "' .. socket .. '"'
+  
+  if package.loaded["snacks"] then
+      -- Use toggle to allow hiding without killing
+      Snacks.terminal.toggle(cmd, { 
+        win = { 
+          position = "float", 
+          border = "rounded",
+          width = 0.8,
+          height = 0.8,
+          title = " 🦆 Voice Ducky ",
+          title_pos = "center"
+        },
+        interactive = true,
+        singleton = true -- Keep one instance running
+      })
+  else
+      vim.cmd("vsplit | terminal " .. cmd)
+  end
+end, { desc = "Voice Ducky" })
