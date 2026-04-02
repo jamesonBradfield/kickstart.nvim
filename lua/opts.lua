@@ -6,11 +6,12 @@ vim.g.maplocalleader = '\\\\'
 
 vim.env.PYTHONIOENCODING = 'utf-8'
 
--- Use bash as the shell for terminal buffers (so scoop shims are in PATH)
-vim.o.shell = vim.fn.expand '~/scoop/apps/git/current/bin/bash.exe'
+local msys2_path = vim.fn.expand '~/scoop/apps/msys2/current/usr/bin/zsh.exe'
+
+vim.o.shell = msys2_path
 vim.o.shellcmdflag = '-c'
 vim.o.shellquote = ''
-vim.o.shellxquote = ''
+vim.o.shellxquote = '' -- Crucial for MSYS2: keep this empty to avoid double-quoting
 vim.o.relativenumber = true
 vim.o.number = true -- Show line numbers
 vim.o.clipboard = 'unnamedplus' -- Use system clipboard
@@ -60,7 +61,7 @@ vim.o.guicursor = '' -- Use default cursor shape
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 -- 1. Configure how the diagnostics look natively
 vim.diagnostic.config {
-  virtual_text = true, -- Shows the short error text at the end of the line
+  virtual_text = false, -- DISABLED: Use Trouble instead
   signs = true, -- Shows the icon in the gutter
   underline = true, -- Underlines the broken code
   update_in_insert = false, -- Wait until you exit insert mode to yell at you
@@ -73,18 +74,8 @@ vim.diagnostic.config {
   },
 }
 
--- 2. Automatically show the floating window when your cursor stays still
-vim.api.nvim_create_autocmd('CursorHold', {
-  group = vim.api.nvim_create_augroup('AutoFloatDiagnostics', { clear = true }),
-  callback = function()
-    vim.diagnostic.open_float(nil, { focus = false })
-  end,
-  desc = 'Auto-show diagnostic floating window',
-})
-
--- Define custom Nerd Font icons for the diagnostic gutter
+-- 2. Sign icons
 local signs = { Error = ' ', Warn = ' ', Hint = ' ', Info = ' ' }
-
 for type, icon in pairs(signs) do
   local hl = 'DiagnosticSign' .. type
   vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
@@ -101,6 +92,7 @@ local function set_wezterm_user_var(key, value)
   local b64_value = vim.base64.encode(tostring(value))
   -- Emit the OSC 1337 escape sequence
   io.stdout:write(string.format('\x1b]1337;SetUserVar=%s=%s\x07', key, b64_value))
+  io.stdout:flush() -- Force Neovim to send the signal immediately
 end
 
 local wezterm_group = vim.api.nvim_create_augroup('WeztermIntegration', { clear = true })
