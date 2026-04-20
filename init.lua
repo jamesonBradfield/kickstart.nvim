@@ -1,4 +1,3 @@
--- Set up the path for lazy.nvim
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
   local lazyrepo = 'https://github.com/folke/lazy.nvim.git'
@@ -15,8 +14,32 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
+
 require 'opts'
+
 require('lazy').setup 'plugins'
 
--- Clear search highlights with <Esc>
-vim.keymap.set('n', '<Esc>', '<cmd.nohlsearch<CR>')
+vim.keymap.set('n', '<leader>v', function()
+  local socket = vim.v.servername
+  -- Escape backslashes for shell
+  socket = socket:gsub('\\', '\\\\')
+  local cmd = 'pwsh -NoProfile -ExecutionPolicy Bypass -File "C:/Users/jamie/bin/ducky.ps1" --nvim-socket "' .. socket .. '"'
+
+  if package.loaded['snacks'] then
+    -- Use toggle to allow hiding without killing
+    Snacks.terminal.toggle(cmd, {
+      win = {
+        position = 'float',
+        border = 'rounded',
+        width = 0.8,
+        height = 0.8,
+        title = ' 🦆 Voice Ducky ',
+        title_pos = 'center',
+      },
+      interactive = true,
+      singleton = true, -- Keep one instance running
+    })
+  else
+    vim.cmd('vsplit | terminal ' .. cmd)
+  end
+end, { desc = 'Voice Ducky' })

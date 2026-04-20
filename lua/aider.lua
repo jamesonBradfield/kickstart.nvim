@@ -1,97 +1,110 @@
 local M = {}
+local pending_docs = {} -- State to accumulate your <cword> symbols
 
----@type table|nil
-M.aider_term = nil
-
----Get the aider terminal instance
----@return table
-function M.get_aider()
-  -- Use Snacks.terminal.get to find an existing instance or create one
-  local cmd = 'aider --no-auto-commits'
-  
+---Get or create the Aider terminal instance
+local function get()
   ---@diagnostic disable-next-line: undefined-global
-  M.aider_term = Snacks.terminal.get(cmd, {
+  return Snacks.terminal.get('aider --watch', {
     name = 'Aider Agent',
     win = { position = 'right', width = 0.4 },
   })
-  
-  return M.aider_term
 end
 
----Toggle the aider terminal
+---Toggle the Aider terminal
+local addon_cfg = require('plugins.addon_toggle')
+
 function M.toggle()
-  local cmd = 'aider --no-auto-commits'
-  ---@diagnostic disable-next-line: undefined-global
-  M.aider_term = Snacks.terminal.toggle(cmd, {
-    name = 'Aider Agent',
-    win = { position = 'right', width = 0.4 },
-  })
-  -- Ensure we don't stay in insert mode if we just closed it
+  if addon_cfg.active == 'aider' then
+    ---@diagnostic disable-next-line: undefined-global
+    Snacks.terminal.toggle('aider --watch', {
+      name = 'Aider Agent',
+      win = { position = 'right', width = 0.4 },
+    })
+  elseif addon_cfg.active == 'opencode' then
+    vim.cmd('Opencode toggle')
+  end
   vim.cmd('stopinsert')
 end
 
----Send text directly to the terminal channel
----@param text string
-local function send_to_term(text)
-  local aider = M.get_aider()
-  local chan = vim.bo[aider.buf].channel
-  if chan and chan > 0 then
-    vim.api.nvim_chan_send(chan, text)
+-- Toggle Opencode (uses the plugin's command)
+local function opencode_toggle()
+  vim.cmd('Opencode toggle')
+end
+
+-- Swap between Aider and Opencode terminals
+function M.swap()
+  local aid_buf = get().buf
+  -- Check if Aider terminal buffer exists and is listed
+  if vim.api.nvim_buf_is_valid(aid_buf) and vim.bo[aid_buf].buftype ~= '' then
+    -- Aider is open: close it and open Opencode
+    M.toggle()
+    opencode_toggle()
   else
-    vim.notify('Aider terminal channel not found', vim.log.levels.ERROR)
+    -- Opencode is open or nothing: close Opencode and open Aider
+    opencode_toggle()
+    M.toggle()
   end
 end
 
----Add a file to the aider terminal
+---Add a file to the Aider terminal
+---@param path string
 function M.add_file(path)
-  -- Send the /add command followed by a carriage return
-  send_to_term('/add ' .. path .. '\r')
-  vim.notify('Added to Aider: ' .. vim.fn.fnamemodify(path, ':t'))
-end
-
----Clear the cumulative hover context
-function M.clear_context()
-  local context_file = vim.fn.getcwd() .. '/aider_hover_context.md'
-  local f = io.open(context_file, 'w')
-  if f then
-    f:write('# Aider Investigation Context\n\nStarted: ' .. os.date('%Y-%m-%d %H:%M:%S') .. '\n')
-    f:close()
-    vim.notify('Aider hover context cleared')
-  else
-    vim.notify('Failed to clear aider context file', vim.log.levels.ERROR)
+  local chan = vim.bo[get().buf].channel
+  if chan > 0 then
+    vim.api.nvim_chan_send(chan, '/add ' .. path .. '\r')
+    vim.notify('Added to Aider: ' .. vim.fn.fnamemodify(path, ':t'))
   end
 end
 
----Send LSP hover information to aider via a cumulative context file
-function M.send_hover()
-  local params = vim.lsp.util.make_position_params(0, 'utf-16')
-  vim.lsp.buf_request(0, 'textDocument/hover', params, function(err, result, _ctx, _config)
-    if err or not (result and result.contents) then
-      vim.notify('No hover info found', vim.log.levels.WARN)
+---Extract <cword> and build the progressive docs query in the Aider terminal
+function M.append_doc_symbol()
+  local word = vim.fn.expand('<cword>')
+  if not word or word == "" then return end
+
+  -- Prevent duplicate entries
+  for _, v in ipairs(pending_docs) do
+    if v == word then
+      vim.notify("'" .. word .. "' is already in the query.", vim.log.levels.WARN)
       return
     end
+  end
 
-    local markdown_lines = vim.lsp.util.convert_input_to_markdown_lines(result.contents)
-    local hover_text = table.concat(markdown_lines, '\n')
-    local symbol = vim.fn.expand('<cword>')
+  table.insert(pending_docs, word)
 
-    -- Use a stable file in the project root (Append mode 'a')
-    local context_file = vim.fn.getcwd() .. '/aider_hover_context.md'
-    local f = io.open(context_file, 'a')
-    if f then
-      local timestamp = os.date('%H:%M:%S')
-      f:write(string.format('\n\n---\n## [%s] Symbol: %s\n\n%s', timestamp, symbol, hover_text))
-      f:close()
-
-      -- Tell Aider to add/refresh this file. 
-      send_to_term('/add aider_hover_context.md\r')
-
-      M.get_aider():show()
-      vim.notify('LSP context for "' .. symbol .. '" appended to aider_hover_context.md')
+  -- Format the grammatical list (e.g., "RenderingServer", "Vector3" and "Camera3D")
+  local targets = ""
+  for i, doc in ipairs(pending_docs) do
+    if i == 1 then
+      targets = '"' .. doc .. '"'
+    elseif i == #pending_docs then
+      targets = targets .. ' and "' .. doc .. '"'
     else
-      vim.notify('Failed to write aider context file', vim.log.levels.ERROR)
+      targets = targets .. ', "' .. doc .. '"'
     end
-  end)
+  end
+
+  -- Construct the final prompt exactly as you requested
+  local prompt = "/ask let's find the docs of " .. targets .. " inside generated-docs@latest #use-tools"
+
+  -- Send to Aider terminal
+  local chan = vim.bo[get().buf].channel
+
+  if chan > 0 then
+    -- \x15 is Ctrl-U (clears the current prompt line in Aider)
+    -- We send the prompt WITHOUT \r so it sits on the line waiting for you to hit Enter
+    vim.api.nvim_chan_send(chan, "\x15" .. prompt)
+    vim.notify("Appended '" .. word .. "' to docs query.", vim.log.levels.INFO)
+  end
+end
+
+---Clear the query state (call this after you hit Enter in Aider)
+function M.clear_doc_query()
+  pending_docs = {}
+  local chan = vim.bo[get().buf].channel
+  if chan > 0 then
+    vim.api.nvim_chan_send(chan, "\x15") -- Clear the terminal line
+  end
+  vim.notify("Aider docs query state cleared.", vim.log.levels.INFO)
 end
 
 return M

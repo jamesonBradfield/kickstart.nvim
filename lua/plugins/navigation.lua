@@ -2,6 +2,31 @@ local keys = require 'keys'
 
 return {
   {
+    -- Telescope
+    'nvim-telescope/telescope.nvim',
+    tag = '0.1.8',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    opts = {},
+    keys = {
+      { '<leader>ff', '<cmd>Telescope find_files<cr>', desc = 'Find Files' },
+      { '<leader>fg', '<cmd>Telescope live_grep<cr>', desc = 'Live Grep' },
+      { '<leader>fb', '<cmd>Telescope buffers<cr>', desc = 'Buffers' },
+      { '<leader>fh', '<cmd>Telescope help_tags<cr>', desc = 'Help Tags' },
+    },
+  },
+  {
+    -- Fzf-lua
+    'ibhagwan/fzf-lua',
+    dependencies = { 'nvim-tree/nvim-web-devicons' },
+    opts = {},
+    keys = {
+      { '<leader>ff', '<cmd>FzfLua files<cr>', desc = 'Find Files' },
+      { '<leader>fg', '<cmd>FzfLua live_grep<cr>', desc = 'Live Grep' },
+      { '<leader>fb', '<cmd>FzfLua buffers<cr>', desc = 'Buffers' },
+      { '<leader>fh', '<cmd>FzfLua help_tags<cr>', desc = 'Help Tags' },
+    },
+  },
+  {
     -- Persistence
     'folke/persistence.nvim',
     event = 'BufReadPre',
@@ -36,16 +61,14 @@ return {
     opts = {
       preset = 'helix',
       spec = {
-        { '<leader>c', group = '[c]ode/symbols' },
-        { '<leader>d', group = '[d]ebug' },
-        { '<leader>e', group = '[e]rrors/trouble' },
-        { '<leader>g', group = '[g]it' },
-        { '<leader>h', group = '[h]arpoon/grapple' },
-        { '<leader>k', group = '[k]telekasten' },
-        { '<leader>q', group = '[q]sessions/quit' },
-        { '<leader>s', group = '[s]earch/pickers' },
-        { '<leader>t', group = '[t]erminals/aider' },
-        { '<leader>u', group = '[u]tils' },
+        { '<leader>c', group = 'Code', mode = { 'n', 'x' } },
+        { '<leader>d', group = 'Document' },
+        { '<leader>g', group = 'Git' },
+        { '<leader>q', group = 'Session/Quit' },
+        { '<leader>s', group = 'Search' },
+        { '<leader>x', group = 'Trouble/Diagnostics' },
+        { '<leader>k', group = 'Telekasten' },
+        { '<leader>t', group = 'Toggle/Terminal' },
       },
     },
     keys = keys.which_key,

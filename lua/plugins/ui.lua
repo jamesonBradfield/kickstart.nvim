@@ -96,7 +96,6 @@ return {
       vim.o.foldlevel = 99
       vim.o.foldlevelstart = 99
       vim.o.foldenable = true
-      vim.o.fillchars = [[eob: ,fold: ,foldopen:,foldsep: ,foldclose:]]
     end,
     config = function()
       local handler = function(virtText, lnum, endLnum, width, truncate)
@@ -141,7 +140,7 @@ return {
   {
     -- Render Markdown
     'MeanderingProgrammer/render-markdown.nvim',
-    ft = { 'markdown' },
+    ft = { 'markdown', 'codecompanion' },
     lazy = false,
     dependencies = { 'nvim-treesitter/nvim-treesitter' },
     opts = { latex = { enabled = false }, win_options = { conceallevel = { rendered = 2 } } },

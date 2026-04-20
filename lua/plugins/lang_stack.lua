@@ -6,25 +6,19 @@ return {
     lazy = false,
     config = function()
       vim.g.rustaceanvim = {
-        -- LSP configuration
         server = {
           root_dir = function(fname)
-            return require('lspconfig.util').root_pattern('Cargo.toml')(fname)
+            return require('lspconfig.util').root_pattern 'Cargo.toml'(fname)
           end,
           on_attach = function(client, bufnr)
             -- Override standard Hover/Action keys with Rustacean's specialized UI
-            vim.keymap.set('n', '<leader>ch', function()
+            vim.keymap.set('n', 'K', function()
               vim.cmd.RustLsp { 'hover', 'actions' }
             end, { silent = true, buffer = bufnr, desc = 'Rustacean: Hover Actions' })
 
             vim.keymap.set('n', '<leader>ca', function()
               vim.cmd.RustLsp 'codeAction'
             end, { silent = true, buffer = bufnr, desc = 'Rustacean: Code Action' })
-
-            -- Expand macro under cursor - extremely useful for GodotClass macros
-            vim.keymap.set('n', '<leader>em', function()
-              vim.cmd.RustLsp 'expandMacro'
-            end, { silent = true, buffer = bufnr, desc = 'Rustacean: Expand Macro' })
           end,
           default_settings = {
             ['rust-analyzer'] = {
@@ -42,18 +36,9 @@ return {
               },
               checkOnSave = true,
               check = { command = 'clippy' },
-              diagnostics = {
-                disabled = { 'unresolved-proc-macro', 'proc-macro-disabled' },
-              },
-              files = {
-                excludeDirs = { '.godot', '.git', 'target' },
-              },
+              diagnostics = { disabled = { 'unresolved-proc-macro', 'proc-macro-disabled' } },
             },
           },
-        },
-        -- DAP configuration (rustaceanvim can manage this for us)
-        dap = {
-          adapter = require('rustaceanvim.config').get_codelldb_adapter('codelldb', 'lldb-community'),
         },
       }
     end,
@@ -72,6 +57,8 @@ return {
         lua = { 'stylua' },
         gdscript = { 'gdformat' },
         python = { 'ruff_format', 'ruff_organize_imports' },
+        json = { 'prettier' },
+        yaml = { 'yamlfmt' },
       },
       format_on_save = { timeout_ms = 500, lsp_format = 'fallback' },
     },
@@ -80,7 +67,7 @@ return {
     -- Nvim-Lint: Linter manager.
     'mfussenegger/nvim-lint',
     config = function()
-      require('lint').linters_by_ft = { gd = 'gdlint', python = { 'ruff' }, yaml = { 'yamlfmt' } }
+      require('lint').linters_by_ft = { gd = 'gdlint', python = { 'ruff' } }
       vim.api.nvim_create_autocmd({ 'BufWritePost' }, {
         callback = function()
           require('lint').try_lint()

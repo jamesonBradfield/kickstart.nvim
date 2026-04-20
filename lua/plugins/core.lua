@@ -40,24 +40,16 @@ return {
         callback = function(args)
           local buf_id = args.data.buf_id
 
-          -- Use <leader>ha to match your global Grapple toggle key
-          vim.keymap.set('n', '<leader>ha', function()
+          -- Use <leader>m to match your global Grapple toggle key
+          vim.keymap.set('n', '<leader>m', function()
             local entry = MiniFiles.get_fs_entry()
 
             -- Only toggle tags for actual files, not directories
-            if entry and (entry.fs_type == 'file' or entry.type == 'file') then
+            if entry and entry.fs_type == 'file' then
               require('grapple').toggle { path = entry.path }
               vim.notify('Toggled Grapple tag: ' .. entry.name)
             end
           end, { buffer = buf_id, desc = 'Grapple toggle tag (mini.files)' })
-
-          -- Add file to Aider
-          vim.keymap.set('n', '<leader>t+', function()
-            local entry = MiniFiles.get_fs_entry()
-            if entry and (entry.fs_type == 'file' or entry.type == 'file') then
-              require('aider').add_file(entry.path)
-            end
-          end, { buffer = buf_id, desc = 'Aider: Add file' })
         end,
       })
     end,
@@ -94,7 +86,96 @@ return {
     ---@type snacks.Config
     opts = {
       bigfile = { enabled = true },
-      dashboard = { enabled = true },
+      dashboard = {
+        enabled = true,
+        sections = {
+          { section = 'header' },
+          {
+            pane = 1,
+            section = 'keys',
+            gap = 0,
+            padding = 1,
+          },
+          {
+            pane = 2,
+            title = 'Projects',
+            icon = ' ',
+            padding = { 1, 0 },
+            {
+              function()
+                local items = {}
+                local projects_dir = vim.fn.expand '~/projects'
+                local project_dirs = vim.fn.glob(projects_dir .. '/*', true, true)
+                local dirs = {}
+                for _, dir in ipairs(project_dirs) do
+                  if vim.fn.isdirectory(dir) == 1 then
+                    table.insert(dirs, dir)
+                  end
+                end
+                table.sort(dirs, function(a, b)
+                  return vim.fn.getftime(a) > vim.fn.getftime(b)
+                end)
+
+                for i = 1, math.min(#dirs, 5) do
+                  local dir = dirs[i]
+                  table.insert(items, {
+                    pane = 2,
+                    icon = ' ',
+                    desc = vim.fn.fnamemodify(dir, ':t'),
+                    padding = 0,
+                    indent = 2,
+                    action = function()
+                      vim.api.nvim_set_current_dir(dir)
+                      require('persistence').load()
+                    end,
+                    autokey = true,
+                  })
+                end
+                return items
+              end,
+            },
+          },
+          {
+            pane = 2,
+            title = 'Recent Sessions',
+            icon = ' ',
+            padding = { 1, 0 },
+            {
+              function()
+                local ok, persistence = pcall(require, 'persistence')
+                if not ok then
+                  return {}
+                end
+                local items = {}
+                local sessions = persistence.list()
+                table.sort(sessions, function(a, b)
+                  return vim.fn.getftime(a) > vim.fn.getftime(b)
+                end)
+                for i = 1, math.min(#sessions, 5) do
+                  local session = sessions[i]
+                  local name = vim.fn.fnamemodify(session, ':t:r'):gsub('%%', '/')
+                  local display_name = name:match '([^/]+)$' or name
+                  table.insert(items, {
+                    pane = 2,
+                    icon = ' ',
+                    desc = display_name,
+                    padding = 0,
+                    indent = 2,
+                    action = function()
+                      persistence.load { session = session }
+                    end,
+                    autokey = true,
+                  })
+                end
+                return items
+              end,
+            },
+          },
+          { section = 'startup' },
+        },
+        width = 80,
+        pane_gap = 6,
+      },
       indent = { enabled = true },
       input = { enabled = true },
       notifier = { enabled = true },
@@ -133,24 +214,6 @@ return {
     },
     config = function(_, opts)
       require('snacks').setup(opts)
-
-      -- Ensure shell uses MSYS2 Zsh directly
-      if vim.fn.has 'win32' == 1 then
-        -- Direct path to the zsh binary inside the MSYS2 folder
-        -- Scoop usually installs MSYS2 to this location:
-        local msys2_zsh = 'C:/Users/jamie/scoop/apps/msys2/current/usr/bin/zsh.exe'
-
-        if vim.fn.executable(msys2_zsh) == 1 then
-          vim.o.shell = msys2_zsh
-          -- These flags ensure zsh starts correctly without looking for cmd.exe syntax
-          vim.o.shellcmdflag = '-c'
-          vim.o.shellquote = ''
-          vim.o.shellxquote = ''
-        else
-          -- Fallback if the path above is wrong
-          vim.notify('MSYS2 Zsh not found at: ' .. msys2_zsh, vim.log.levels.WARN)
-        end
-      end
 
       -- Bacon Terminal: Automatically spin up a hidden terminal
       vim.api.nvim_create_autocmd('FileType', {

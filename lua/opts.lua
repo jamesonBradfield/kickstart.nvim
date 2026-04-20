@@ -38,7 +38,7 @@ vim.o.termguicolors = true -- Enable 24-bit RGB colors
 vim.o.list = true -- Show invisible characters
 vim.o.listchars = 'tab:>·,trail:·,nbsp:·' -- Show invisible characters
 vim.o.fillchars = 'eob: ,fold: ,foldopen:,foldsep: ,foldclose:' -- Better fold characters
-vim.o.shortmess = 'atI' -- Shorten messages
+vim.o.shortmess = 'atIcW' -- Shorten messages, avoid hit-enter prompts
 vim.o.lazyredraw = true -- Don't redraw while executing macros
 vim.o.scrolloff = 3 -- Minimum lines to keep above/below cursor
 vim.o.splitright = true -- Split to the right
@@ -61,7 +61,7 @@ vim.o.guicursor = '' -- Use default cursor shape
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 -- 1. Configure how the diagnostics look natively
 vim.diagnostic.config {
-  virtual_text = false, -- DISABLED: Use Trouble instead
+  virtual_text = true, -- Shows the short error text at the end of the line
   signs = true, -- Shows the icon in the gutter
   underline = true, -- Underlines the broken code
   update_in_insert = false, -- Wait until you exit insert mode to yell at you
@@ -74,8 +74,18 @@ vim.diagnostic.config {
   },
 }
 
--- 2. Sign icons
+-- 2. Automatically show the floating window when your cursor stays still
+vim.api.nvim_create_autocmd('CursorHold', {
+  group = vim.api.nvim_create_augroup('AutoFloatDiagnostics', { clear = true }),
+  callback = function()
+    vim.diagnostic.open_float(nil, { focus = false })
+  end,
+  desc = 'Auto-show diagnostic floating window',
+})
+
+-- Define custom Nerd Font icons for the diagnostic gutter
 local signs = { Error = ' ', Warn = ' ', Hint = ' ', Info = ' ' }
+
 for type, icon in pairs(signs) do
   local hl = 'DiagnosticSign' .. type
   vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })

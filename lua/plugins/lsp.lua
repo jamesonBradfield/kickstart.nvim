@@ -10,39 +10,15 @@ return {
     ---@type blink.cmp.Config
     opts = {
       keymap = {
-        preset = 'none',
-        ['<Tab>'] = { 'select_next', 'fallback' },
-        ['<S-Tab>'] = { 'select_prev', 'fallback' },
+        preset = 'super-tab',
         ['<CR>'] = { 'accept', 'fallback' },
-        ['<Space>'] = { 'accept', 'fallback' },
       },
-      appearance = {
-        use_nvim_cmp_as_default = true,
-        nerd_font_variant = 'mono',
-      },
-      completion = {
-        menu = { border = 'rounded' },
-        documentation = {
-          auto_show = true,
-          auto_show_delay_ms = 200,
-          window = {
-            border = 'rounded',
-            max_width = 80,
-            max_height = 20,
-          },
-        },
-        ghost_text = { enabled = true },
-      },
-      signature = {
-        enabled = true,
-        window = {
-          border = 'rounded',
-          max_width = 80,
-          max_height = 10,
-        },
-      },
+      completion = { documentation = { auto_show = true } },
       sources = {
-        default = { 'lsp', 'path', 'snippets', 'buffer' },
+        default = { 'lazydev', 'lsp', 'path', 'snippets', 'buffer' },
+        providers = {
+          lazydev = { name = 'LazyDev', module = 'lazydev.integrations.blink', score_offset = 100 },
+        },
       },
     },
     opts_extend = { 'sources.default' },
@@ -52,35 +28,6 @@ return {
     'neovim/nvim-lspconfig',
     lazy = false,
     config = function()
-      -- Standard Servers using native Neovim 0.11+ APIs
-      -- blink.cmp automatically injects capabilities into these global configs
-
-      vim.lsp.config('lua_ls', {
-        settings = {
-          Lua = {
-            completion = { callSnippet = 'Replace' },
-            diagnostics = { globals = { 'vim' } },
-          },
-        },
-      })
-      vim.lsp.enable 'lua_ls'
-
-      vim.lsp.config('bashls', {})
-      vim.lsp.enable 'bashls'
-
-      vim.lsp.config('pyright', {})
-      vim.lsp.enable 'pyright'
-
-      -- Godot Server: Connects via localhost TCP to the Godot Editor instance
-      vim.lsp.config('gdscript', {
-        name = 'godot',
-        cmd = vim.lsp.rpc.connect('127.0.0.1', 6005),
-      })
-      vim.lsp.enable 'gdscript'
-
-      vim.lsp.enable 'gdshader_lsp'
-
-      -- Global diagnostic configuration
       local hover_border = {
         { '╭', 'FloatBorder' },
         { '─', 'FloatBorder' },
@@ -107,6 +54,21 @@ return {
           end
         end,
       })
+
+      -- Standard Servers
+      vim.lsp.config('lua_language_server', {})
+      vim.lsp.enable 'lua_language_server'
+      vim.lsp.config('bash_language_server', {})
+      vim.lsp.enable 'bash_language_server'
+      vim.lsp.config('basedpyright', {})
+      vim.lsp.enable 'basedpyright'
+      -- Godot Server: Connects via localhost TCP to the Godot Editor instance
+      vim.lsp.config('gdscript', {
+        name = 'godot',
+        cmd = vim.lsp.rpc.connect('127.0.0.1', 6005),
+      })
+      vim.lsp.enable 'gdscript'
+      vim.lsp.enable 'gdshader_lsp'
     end,
   },
   {
@@ -116,7 +78,6 @@ return {
     opts = {
       library = {
         { path = '${3rd}/luv/library', words = { 'vim%.uv' } },
-        { path = 'snacks.nvim', words = { 'Snacks' } },
         { path = 'wezterm-types', mods = { 'wezterm' } },
       },
     },
